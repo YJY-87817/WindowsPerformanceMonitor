@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- 監控流程、排程、告警狀態機與使用案例；只依賴 Core 定義的抽象。 -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PerformanceMonitor.Core\PerformanceMonitor.Core.csproj" />
+    <ProjectReference Include="..\PerformanceMonitor.Reporting\PerformanceMonitor.Reporting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+</Project>

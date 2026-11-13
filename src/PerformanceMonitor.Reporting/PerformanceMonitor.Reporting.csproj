@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- 統計、彙總與 HTML／SVG 產生；不負責採樣與檔案讀寫流程。 -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PerformanceMonitor.Core\PerformanceMonitor.Core.csproj" />
+  </ItemGroup>
+
+</Project>

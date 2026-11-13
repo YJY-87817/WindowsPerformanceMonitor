@@ -1,0 +1,17 @@
+# 0005：資料目錄、檔案命名與 schema 版本
+
+- 狀態：已採用
+- 日期：2026-11-13
+- 決定者：專案負責人
+
+## 決定
+
+1. **資料目錄：** 預設 `%LOCALAPPDATA%\WindowsPerformanceMonitor\Data`（CSV）與 `...\Logs`（Log）；可在設定中更改。程式安裝在唯讀位置（例如 Program Files）也能寫入。
+2. **檔名：** `<類型>_v<schema 版本>_<YYYYMMDD>.csv`，例如 `SystemMetrics_v1_20261113.csv`；Log 為 `Application_YYYYMMDD.log`、`Error_YYYYMMDD.log`。
+3. **schema 版本寫在檔名：** 欄位改變時版本號 +1，自然寫到新檔，舊檔不修改；取代舊版「標題列不符改寫 `_2` 檔」的做法。
+4. **分檔日期：** 以紀錄時間的**本機日期**決定（同舊版），跨午夜寫入新檔；檔內時間欄位為 UTC。
+
+## 影響
+
+- 使用者指定的資料目錄無法寫入時的處理，於 Phase 1 決定並寫入規格。
+- 各檔欄位與版本見 `docs/Data-Schema.md`。

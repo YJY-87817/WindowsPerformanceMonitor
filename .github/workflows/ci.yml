@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  CONFIGURATION: Release
+
+jobs:
+  check:
+    name: 檢查（.NET 10，Windows）
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v5
+
+      - name: 安裝 .NET SDK（版本依 global.json）
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: 還原套件
+        run: dotnet restore
+
+      - name: 1. Lint（分析器與程式碼樣式，警告視為錯誤）
+        if: ${{ !cancelled() }}
+        run: dotnet build -c "$CONFIGURATION" --no-restore
+
+      - name: 2. Format
+        if: ${{ !cancelled() }}
+        run: dotnet format --verify-no-changes --no-restore
+
+      - name: 3. Type Check（每個專案都開啟 Nullable）
+        if: ${{ !cancelled() }}
+        run: bash tools/check-type-settings.sh
+
+      - name: 4. Unit Test
+        if: ${{ !cancelled() }}
+        run: dotnet test -c "$CONFIGURATION" --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+
+      - name: 5. Build Check（self-contained 發行）
+        if: ${{ !cancelled() }}
+        run: |
+          dotnet publish src/PerformanceMonitor.App -c "$CONFIGURATION" -r win-x64 --self-contained -o publish/App
+          dotnet publish src/PerformanceMonitor.Cli -c "$CONFIGURATION" -r win-x64 --self-contained -o publish/Cli
+
+      - name: 6. Git Diff Check
+        if: ${{ !cancelled() }}
+        run: bash tools/diff-check.sh
+
+      - name: 7. Smoke Test（執行發行後的主控台程式）
+        if: ${{ !cancelled() }}
+        run: bash tools/smoke-test.sh publish/Cli/PerformanceMonitor.Cli.exe
