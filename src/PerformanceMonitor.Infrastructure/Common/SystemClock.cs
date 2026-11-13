@@ -15,4 +15,8 @@ public sealed class SystemClock : IClock
 
     /// <inheritdoc />
     public TimeSpan Elapsed => Stopwatch.GetElapsedTime(_startTimestamp);
+
+    /// <inheritdoc />
+    public Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken) =>
+        Task.Delay(delay, cancellationToken);
 }

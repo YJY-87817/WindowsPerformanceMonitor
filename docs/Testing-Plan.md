@@ -66,3 +66,11 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | Cli `--self-check` | 同上（以 `dotnet` 執行 dll） | Passed |
 | 以上 7 項 | Windows CI | 見 PR 的 CI 結果 |
 | WPF 視窗開啟 | Windows 實機 | Not Tested |
+
+### Phase 1a（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：模型與狀態規則、設定解析與驗證、設定範例、排程格點、取樣隔離、主迴圈（以假時間驗證格點、CSV／程序紀錄時點、略過不補跑、停止補寫） | 同上 | Passed（97 個） |
+| 以上 | Windows CI | 見 PR 的 CI 結果 |

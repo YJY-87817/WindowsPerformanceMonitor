@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Phase 1a（2026-11-13）：資料模型、設定、排程
+
+- 新增資料模型：`SampleId`、`ModuleResult`、`MonitorSnapshot`；多裝置整體狀態規則 `StatusAggregator`；錯誤訊息整理（第一行、最長 200 字）。
+- 新增監控介面：`IMonitor`、`IHostInfo`、`ISnapshotProvider`、`ISnapshotRecorder`；`IClock` 加入 `DelayAsync`。
+- 新增設定：`AppSettings`、`SettingsParser`（型別檢查、缺少欄位用預設值、未知欄位警告）、`SettingsValidator`（範圍與相互關係，一次列出所有錯誤）、`SettingsFileLoader`、`AppDataPaths`；範例 `docs/settings.example.json`。
+- 新增排程與主迴圈：`IntervalSchedule`（略過錯過的格點、不補跑）、`SampleRunner`（模組失敗隔離）、`MonitoringEngine`（暖機、取樣、CSV／程序紀錄格點、停止時補寫）、`SnapshotStore`。
+- 文件：記錄盤點與資料格式的確認結果；規格 v2.0 新增取樣流程與設定檔章節；決策 0005 補上目錄寫不進去的處理。
+
 ### Phase 0（2026-11-13）
 
 - 新增 Solution 骨架：Core、Application、Reporting、Infrastructure、App（WPF）、Cli 與 4 個測試專案。

@@ -1,6 +1,6 @@
 # 資料格式（schema v1 初稿）
 
-- 版本：Phase 0 初稿（2026-11-13）；Phase 1 實作 CSV 寫入時定稿，Phase 2 依各資料來源補齊
+- 版本：v1 草案（2026-11-13 負責人確認第 5 節的差異）；Phase 1b 實作 CSV 寫入時定稿，Phase 2 依各資料來源補齊
 - 相關決策：[0005 資料目錄、檔案命名與 schema 版本](decisions/0005-data-storage.md)
 
 ## 1. 檔案
@@ -51,7 +51,7 @@ Logs/
 |---|---|---|
 | SampleId | String | |
 | TimestampUtc | DateTime | |
-| TimestampLocal | DateTime | 含時區偏移的本機時間。**待確認（盤點 D2）** |
+| TimestampLocal | DateTime | 含時區偏移的本機時間（`yyyy-MM-ddTHH:mm:ss.fffzzz`）；只有本檔有此欄位 |
 | ComputerName | String | |
 | CpuUsagePercent | Decimal | |
 | CpuStatus | Status | |

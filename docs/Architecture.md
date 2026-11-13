@@ -1,6 +1,6 @@
 # 架構
 
-- 版本：Phase 0 初稿（2026-11-13）
+- 版本：Phase 1a（2026-11-13）
 - 相關決策：[0002 分層架構](decisions/0002-layered-architecture.md)、[0003 依賴套件](decisions/0003-dependencies.md)、[0004 主控台進入點](decisions/0004-cli-entry-point.md)
 
 ## 1. 分層與依賴方向
@@ -61,25 +61,27 @@ builder.Services
 
 ## 4. 模組介面（初稿）
 
-Phase 0 已建立：
-
 | 介面／型別 | 專案 | 說明 |
 |---|---|---|
-| `IClock` | Core | `UtcNow`（時間戳）與 `Elapsed`（單調時間，排程與速率計算用） |
-| `MonitorStatus` | Core | `OK`、`WarmingUp`、`Unavailable`、`Error`、`Disabled` |
-| `ErrorCode` | Core | 8 種錯誤分類 |
-| `SystemClock` | Infrastructure | `IClock` 實作 |
-| `SelfCheckService` | Application | 主控台 `--self-check` 使用 |
+| `IClock` | Core | `UtcNow`（時間戳）、`Elapsed`（單調時間）、`DelayAsync`（等待；測試用假時間立即推進） |
+| `IHostInfo` | Core | 電腦名稱、本機時區時差 |
+| `IMonitor` | Core | 監控模組：`Name`、`IsEnabled`、`WarmUpAsync`、`SampleAsync` 回傳 `ModuleResult` |
+| `ModuleResult` | Core | 模組結果基底 record：`Status`、`ErrorCode`、`ErrorMessage`（第一行、最長 200 字）、`Duration`；各模組以衍生 record 加數值欄位 |
+| `MonitorSnapshot` | Core | 一次完整取樣：`SampleId`、`TimestampUtc`、`TimestampLocal`、電腦名稱、各模組結果、耗時、`LoopOverrun` |
+| `ISnapshotProvider` | Core | 最新快照與發布事件，給 UI 讀取 |
+| `ISnapshotRecorder` | Core | 寫入歷史紀錄；Phase 1b 以 CSV 實作（目前為 `NullSnapshotRecorder`） |
+| `StatusAggregator` | Core | 多裝置整體狀態規則 |
+| `AppSettings` | Core | 設定（各區塊為 record） |
+| `SettingsParser`／`SettingsValidator` | Application | 解析 JSON、檢查型別與範圍，一次列出所有錯誤 |
+| `IntervalSchedule` | Application | 單調時間格點：超時略過錯過的格點、不補跑 |
+| `SampleRunner` | Application | 依序執行模組一次，隔離失敗並組成快照 |
+| `MonitoringEngine` | Application | 主迴圈：暖機、取樣、發布、依格點寫入、停止時補寫 |
+| `SnapshotStore` | Application | `ISnapshotProvider` 實作 |
+| `SystemClock`、`HostInfo` | Infrastructure | `IClock`、`IHostInfo` 實作 |
+| `AppDataPaths` | Infrastructure | 根目錄、設定檔路徑、資料／Log 目錄解析 |
+| `SettingsFileLoader` | Infrastructure | 讀取 settings.json（不存在時用預設值） |
 
-Phase 1 預計加入（名稱可在實作時調整）：
-
-| 介面 | 說明 |
-|---|---|
-| `IMonitor` | 監控模組共同介面：名稱、是否啟用、取樣（回傳含 `Status` 的結果） |
-| `IMetricsCollector<T>` | 取得指定型別的監控資料 |
-| `IMetricsRepository<T>` | 寫入與讀取資料（CSV 實作在 Infrastructure） |
-| `IMonitoringScheduler` | 依單調時間格點排程，超時略過錯過的格點、不補跑 |
-| `IMonitorStatusProvider` | 提供各模組目前狀態給 UI |
+組裝點的啟動順序（App／Cli，Phase 1b 起使用）：讀取設定 → 有錯誤時顯示並停止 → 將 `AppSettings` 與各 `IMonitor` 註冊到 DI → 啟動 `MonitoringEngine.RunAsync`。
 
 ## 5. 執行緒與生命週期
 

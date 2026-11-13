@@ -1,0 +1,53 @@
+{
+  "monitor": {
+    "refreshSeconds": 2,
+    "sampleSeconds": 2,
+    "logSeconds": 10
+  },
+  "cpu": { "enabled": true },
+  "memory": { "enabled": true },
+  "disk": { "enabled": true },
+  "diskIo": { "enabled": true },
+  "gpu": { "enabled": true },
+  "network": {
+    "enabled": true,
+    "physicalOnlyByDefault": true,
+    "includeNames": [],
+    "excludeNames": [],
+    "aggregateIncludedAdaptersOnly": true
+  },
+  "process": {
+    "enabled": true,
+    "topCount": 5,
+    "loggingEnabled": true,
+    "logIntervalSeconds": 10
+  },
+  "temperature": { "enabled": true },
+  "thresholds": {
+    "cpuPercent": 90,
+    "cpuRecoveryPercent": 85,
+    "ramPercent": 90,
+    "ramRecoveryPercent": 85,
+    "diskFreePercent": 10,
+    "diskRecoveryFreePercent": 12,
+    "diskFreeGB": null,
+    "diskRecoveryFreeGB": null,
+    "diskConditionMode": "any"
+  },
+  "alert": {
+    "enabled": true,
+    "durationSeconds": 10,
+    "cooldownSeconds": 60,
+    "recoveryDurationSeconds": 10,
+    "repeatNotificationAfterCooldown": true
+  },
+  "timeouts": {
+    "gpuSeconds": 3
+  },
+  "logging": {
+    "enabled": true,
+    "dataDirectory": "Data",
+    "logDirectory": "Logs",
+    "lockedFileRetryCount": 1
+  }
+}

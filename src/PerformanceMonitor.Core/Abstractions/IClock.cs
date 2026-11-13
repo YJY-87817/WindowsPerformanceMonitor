@@ -10,4 +10,7 @@ public interface IClock
 
     /// <summary>單調遞增的經過時間，用於排程與速率計算。</summary>
     TimeSpan Elapsed { get; }
+
+    /// <summary>等待指定時間；可取消。測試可用假時間來源立即推進時間。</summary>
+    Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken);
 }

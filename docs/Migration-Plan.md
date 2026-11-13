@@ -4,7 +4,7 @@
 - 舊版依據：[`Specification_v1.5.md`](https://github.com/YJY-87817/Windows_PC_Performance_Monitor_Specification/blob/main/docs/Specification_v1.5.md)（下稱「v1.5」）與 PowerShell V1.0 實作
 - 處置分類：**保留**（行為照舊）、**改善**（保留需求、改做法）、**不再需要**、**待確認**
 
-> 「建議處置」欄是盤點建議；已由負責人確認的項目標示「已確認」，其餘請在本 PR 審查時確認。標示「待確認」的項目會在對應 Phase 開工前再提問。
+> **確認結果（2026-11-13）：** 負責人確認本表所有建議處置照建議辦理。標示「待確認」的項目在對應 Phase 開工前另行提問，確認後更新本表。
 
 ## 1. 監控模組
 
@@ -50,13 +50,13 @@
 | # | 舊版功能 | v1.5 | 建議處置 | 說明 | Phase |
 |---|---|---|---|---|---|
 | D1 | 五份 CSV | §5.4 | 改善 | 新 schema：磁碟容量與 I/O 分開，新增溫度；見 [Data-Schema.md](Data-Schema.md) | 1／2 |
-| D2 | `TimestampUtc` ＋ `TimestampLocal` | §5.3 | **待確認** | 建議 SystemMetrics 保留兩者（Excel 直接看本機時間），分項檔只放 `TimestampUtc` | 1 |
+| D2 | `TimestampUtc` ＋ `TimestampLocal` | §5.3 | 改善（已確認） | SystemMetrics 保留兩者（Excel 直接看本機時間），分項檔只放 `TimestampUtc` | 1 |
 | D3 | UTF-8 BOM、CRLF、Invariant Culture、小數最多 3 位、空值不寫 0 | §5.3 | 保留 | BOM 讓 Excel 正確顯示中文 | 1 |
 | D4 | 每日分檔（本機日期） | §5.1 | 保留（已確認） | 檔名加 schema 版本，見決策 0005 | 1 |
 | D5 | 標題列不符改寫 `_2` 檔 | §5.5 | 不再需要（已確認） | 由檔名 schema 版本取代 | — |
 | D6 | 每次寫入開檔即關、鎖定時 200 ms 重試、累計遺失筆數 | §5.5 | 保留 | | 1 |
 | D7 | 程序紀錄獨立開關與間隔 | §5.2 | 保留 | | 1 |
-| D8 | 資料目錄：程式旁 → 寫不進去改 `%LOCALAPPDATA%` | §5.1 | 改善（已確認） | 預設 `%LOCALAPPDATA%\WindowsPerformanceMonitor`，見決策 0005 | 1 |
+| D8 | 資料目錄：程式旁 → 寫不進去改 `%LOCALAPPDATA%` | §5.1 | 改善（已確認） | 預設 `%LOCALAPPDATA%\WindowsPerformanceMonitor`；設定的目錄寫不進去時不開始監控並提示，不自動改寫到其他位置。見決策 0005 | 1 |
 | D9 | Application／Error Log、格式、去重、10 分鐘彙總 | §5.6 | 保留 | | 1 |
 | D10 | 啟動 Log：版本、設定摘要、CPU 來源、網路篩選結果 | §5.6 | 保留 | | 1／2 |
 
@@ -64,7 +64,7 @@
 
 | # | 舊版功能 | v1.5 | 建議處置 | 說明 | Phase |
 |---|---|---|---|---|---|
-| S1 | JSON 設定檔與完整驗證 | §9 | 保留 | 位置 `%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`；WPF 設定頁讀寫同一檔 | 1／3 |
+| S1 | JSON 設定檔與完整驗證 | §9 | 保留（已確認：沿用舊版並精簡） | 位置 `%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`；WPF 設定頁讀寫同一檔。欄位見規格 v2.0 §7 | 1／3 |
 | S2 | 命令列即時畫面 | §4.1 | 不再需要 | 由 WPF 取代；Cli 只提供診斷命令 | — |
 | S3 | `-Once` | §5.2 | 改善 | Cli `--once` | 2 |
 | S4 | `-PassThru`（輸出物件供腳本使用） | — | **待確認** | 建議 Cli `--once --json` 輸出 JSON | 2 |
@@ -79,5 +79,4 @@
 | M2 | CPU 的 CIM 備援是否移植 | 不移植 | Phase 2 CPU 開工前 |
 | M7 | 網路資料來源 | Win32 `GetIfTable2` | Phase 2 網路開工前 |
 | C8 | CIM 逾時設定 | 若不用 WMI 則移除 | Phase 2 |
-| D2 | 本機時間欄位 | 只在 SystemMetrics 保留 | Phase 1 開工前 |
 | S4 | JSON 輸出 | Cli `--once --json` | Phase 2 |

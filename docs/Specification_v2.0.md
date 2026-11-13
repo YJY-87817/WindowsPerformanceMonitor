@@ -12,6 +12,7 @@
 | 版本 | 日期 | 狀態 | 內容 |
 |---|---|---|---|
 | 2.0 初稿 | 2026-11-13 | 初稿 | 建立文件：範圍、共通規格、資料、告警、平台；依 Phase 0 盤點結果整理 |
+| 2.0 初稿 | 2026-11-13 | Phase 1a | 盤點建議全部確認；新增 §3.3 取樣流程、§7 設定檔欄位與驗證規則；本機時間欄位只在 SystemMetrics；資料目錄寫不進去時不開始監控 |
 
 ---
 
@@ -74,6 +75,15 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 
 容量 1024 進位（GB、MB）；網路速度十進位 Mbps；百分比 0～100，超出範圍視為資料異常。
 
+### 3.3 取樣流程（Phase 1a）
+
+1. **暖機：** 對每個啟用的模組呼叫暖機（建立速率基準），暖機失敗不影響啟動；接著等待 1 秒。
+2. **取樣：** 依取樣格點依序執行所有模組，同一時間只有一輪取樣。停用的模組結果為 `Disabled`、不呼叫；模組擲出未預期例外時，該模組為 `Error`／`InternalError`，其他模組照常取樣。每個模組與整輪的耗時都記錄下來；整輪耗時超過取樣週期時標示 `LoopOverrun`。
+3. **格點：** 取樣、CSV、程序紀錄三個格點從同一起點開始。超時後跳到下一個尚未經過的格點，錯過的格點不補跑。
+4. **CSV：** 第一次取樣完成後立即寫入，之後每 `logSeconds` 寫入當時最新的快照；同一快照不重複寫入。程序紀錄只在 CSV 紀錄時點檢查是否到期（間隔小於 `logSeconds` 時等同 `logSeconds`）。`logging.enabled = false` 時不寫 CSV。
+5. **發布：** 每次取樣完成後發布最新快照；畫面依自己的更新週期讀取，與取樣週期分開。
+6. **停止：** 捨棄進行中的不完整取樣；最後一筆已完成但尚未寫入的快照補寫一次。
+
 ## 4. 監控模組
 
 各模組的資料來源與無法取得時的行為見 [Hardware-Compatibility](Hardware-Compatibility.md)；移植自舊版的行為見 [Migration-Plan](Migration-Plan.md)。各模組的詳細規格在 Phase 2 該模組開工時補入本章。
@@ -98,6 +108,8 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 - 格式：UTF-8 BOM、CRLF、Invariant Culture、空值不寫 0。
 - 鎖定處理：每次寫入開檔即關；鎖定時 200 ms 後重試，仍失敗則略過並累計遺失筆數（沿用 v1.5 §5.5）。
 - Log：Application／Error，去重與 10 分鐘彙總（沿用 v1.5 §5.6）。
+- 本機時間欄位 `TimestampLocal` 只在 SystemMetrics；其他檔以 `SampleId` 對應。
+- 目錄寫不進去：啟動時實際寫入、刪除一個暫存檔確認；失敗時不開始監控並提示原因，不自動改寫到其他位置。
 
 ## 6. 告警
 
@@ -105,7 +117,49 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 
 ## 7. 設定
 
-沿用 v1.5 §9 的 JSON 設定概念與驗證規則；檔案位置改為 `%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`，WPF 設定頁讀寫同一檔。欄位定稿於 Phase 1。
+檔案：`%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`，WPF 設定頁讀寫同一檔。完整範例（數值即內建預設值）：[settings.example.json](settings.example.json)。
+
+### 7.1 讀取規則
+
+| 情況 | 處理 |
+|---|---|
+| 檔案不存在 | 使用內建預設值並警告；不自動建立檔案 |
+| JSON 無法解析 | 錯誤（含行號），不開始監控 |
+| 欄位型別錯誤、超出範圍、相互關係不合理 | 錯誤，不開始監控；**一次列出所有錯誤** |
+| 欄位或區塊缺少 | 使用預設值，記錄在啟動 Log |
+| 未知欄位 | 忽略並警告（方便發現拼字錯誤） |
+| 欄位名稱 | camelCase，不分大小寫；允許註解與結尾逗號 |
+| 相對路徑 | 以 `%LOCALAPPDATA%\WindowsPerformanceMonitor` 為基準 |
+
+### 7.2 欄位與驗證
+
+| 欄位 | 預設 | 規則 |
+|---|---|---|
+| `monitor.refreshSeconds`、`sampleSeconds`、`logSeconds` | 2、2、10 | 大於 0 的整數 |
+| `cpu`／`memory`／`disk`／`diskIo`／`gpu`／`temperature`．`enabled` | true | |
+| `network.enabled`、`physicalOnlyByDefault`、`aggregateIncludedAdaptersOnly` | true | |
+| `network.includeNames`、`excludeNames` | [] | 字串陣列，不可有空白字串；萬用字元 `*`、`?` |
+| `process.enabled`、`loggingEnabled` | true | |
+| `process.topCount` | 5 | 1～20 |
+| `process.logIntervalSeconds` | 10 | 大於 0 的整數 |
+| `thresholds.cpuPercent`／`cpuRecoveryPercent` | 90／85 | 0～100；恢復值必須小於觸發值 |
+| `thresholds.ramPercent`／`ramRecoveryPercent` | 90／85 | 同上 |
+| `thresholds.diskFreePercent`／`diskRecoveryFreePercent` | 10／12 | 0～100；恢復值必須大於觸發值 |
+| `thresholds.diskFreeGB`／`diskRecoveryFreeGB` | null／null | 成對設定；觸發值 ≥ 0；恢復值必須大於觸發值 |
+| `thresholds.diskConditionMode` | `any` | `any` 或 `all` |
+| `alert.enabled`、`repeatNotificationAfterCooldown` | true | |
+| `alert.durationSeconds`／`cooldownSeconds`／`recoveryDurationSeconds` | 10／60／10 | 0～86400 的整數 |
+| `timeouts.gpuSeconds` | 3 | 1～30 |
+| `logging.enabled` | true | false 時只停止 CSV，Log 照常 |
+| `logging.dataDirectory`／`logDirectory` | `Data`／`Logs` | 不可空白、不可含 `< > " \| ? *` 或控制字元；`:` 只能用在磁碟代號 |
+| `logging.lockedFileRetryCount` | 1 | 0～5 |
+
+### 7.3 與舊版的差異
+
+- 移除（新版固定行為）：`disk.driveType`、`gpu.provider`、`logging.fileRotation`、`logging.encoding`。
+- 暫不提供，Phase 2 確認後再決定：`cpu.counterPath`、`cpu.useCimFallback`、`timeouts.cimSeconds`。舊設定檔裡的這些欄位會被當成未知欄位，只警告不報錯。
+- 新增：`diskIo.enabled`、`temperature.enabled`。
+- 時間設定一律為整數秒。
 
 ## 8. 介面
 
@@ -137,7 +191,5 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 1 | CPU 的 CIM 備援是否移植（盤點 M2） | 不移植 | Phase 2 |
 | 2 | 網路資料來源（盤點 M7） | Win32 `GetIfTable2` | Phase 2 |
 | 3 | CIM 逾時設定（盤點 C8） | 若不用 WMI 則移除 | Phase 2 |
-| 4 | 本機時間欄位（盤點 D2） | 只在 SystemMetrics 保留 | Phase 1 |
 | 5 | Cli JSON 輸出（盤點 S4） | `--once --json` | Phase 2 |
-| 6 | 資料目錄無法寫入時的處理 | Phase 1 提出建議 | Phase 1 |
 | 7 | 程式碼簽章、ARM64 | Phase 5 評估 | Phase 5 |
