@@ -3,7 +3,13 @@
   <!-- Windows 資料來源、感測器、CSV 與 Log 的實作。 -->
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- LibraryImport 產生的 P/Invoke 程式碼需要。 -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PerformanceMonitor.Infrastructure.Tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PerformanceMonitor.Core\PerformanceMonitor.Core.csproj" />

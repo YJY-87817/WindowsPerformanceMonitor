@@ -1,6 +1,6 @@
 # 架構
 
-- 版本：Phase 1c（2026-11-13）
+- 版本：Phase 2-1（2026-11-13）
 - 相關決策：[0002 分層架構](decisions/0002-layered-architecture.md)、[0003 依賴套件](decisions/0003-dependencies.md)、[0004 主控台進入點](decisions/0004-cli-entry-point.md)
 
 ## 1. 分層與依賴方向
@@ -65,7 +65,7 @@ builder.Services
 |---|---|---|
 | `IClock` | Core | `UtcNow`（時間戳）、`Elapsed`（單調時間）、`DelayAsync`（等待；測試用假時間立即推進） |
 | `IHostInfo` | Core | 電腦名稱、本機時區時差 |
-| `IMonitor` | Core | 監控模組：`Name`、`IsEnabled`、`WarmUpAsync`、`SampleAsync` 回傳 `ModuleResult` |
+| `IMonitor` | Core | 監控模組：`Name`、`IsEnabled`、`SourceDescription`（啟動 Log）、`WarmUpAsync`、`SampleAsync` 回傳 `ModuleResult` |
 | `ModuleResult` | Core | 模組結果基底 record：`Status`、`ErrorCode`、`ErrorMessage`（第一行、最長 200 字）、`Duration`；各模組以衍生 record 加數值欄位 |
 | `MonitorSnapshot` | Core | 一次完整取樣：`SampleId`、`TimestampUtc`、`TimestampLocal`、電腦名稱、各模組結果、耗時、`LoopOverrun` |
 | `ISnapshotProvider` | Core | 最新快照與發布事件，給 UI 讀取 |
@@ -88,7 +88,8 @@ builder.Services
 | `AlertConditionEvaluator` | Application | 由快照判斷 CPU／RAM／各磁碟為 Breach、Recovered、Hysteresis 或 Unknown |
 | `AlertStateMachine` | Application | 單一對象的告警狀態轉換 |
 | `AlertService` | Application | 管理所有對象、寫告警 Log、保留最近 5 筆；`IAlertProvider` 實作 |
-| `MonitoringSession` | Application | 接上 Log 觀察者與告警、執行主迴圈、寫開始／停止 Log |
+| `MonitoringSession` | Application | 接上 Log 觀察者與告警、執行主迴圈（`RunAsync`）或單次取樣（`RunOnceAsync`）、寫開始／停止 Log |
+| `SnapshotFormatter` | Application | 主控台文字與 JSON 輸出 |
 | `SystemClock`、`HostInfo` | Infrastructure | `IClock`、`IHostInfo` 實作 |
 | `AppDataPaths` | Infrastructure | 根目錄、設定檔路徑、資料／Log 目錄解析 |
 | `SettingsFileLoader` | Infrastructure | 讀取 settings.json（不存在時用預設值） |
@@ -96,8 +97,10 @@ builder.Services
 | `CsvFileWriter`、`CsvSnapshotRecorder` | Infrastructure | UTF-8 BOM 附加寫入、鎖定重試；`ISnapshotRecorder` 實作 |
 | `DailyLogWriter` | Infrastructure | `IAppLog` 實作 |
 | `StorageInitializer` | Infrastructure | 啟動前確認 CSV／Log 目錄可寫入 |
+| `IPdhQueryFactory`、`IPdhQuery`、`PdhQuery` | Infrastructure | PDH 封裝（`PdhAddEnglishCounter`、LibraryImport）；介面讓監控模組可用假物件測試 |
+| `CpuMonitor` | Infrastructure | CPU 使用率 |
 
-組裝點的啟動順序（App／Cli，Phase 2 起使用）：讀取設定 → 有錯誤時顯示並停止 → `StorageInitializer.Check` 有錯誤時顯示並停止 → 將 `AppSettings` 與各 `IMonitor` 註冊到 DI → 寫啟動 Log → 執行 `MonitoringSession.RunAsync`。
+組裝點的啟動順序（Cli `--once` 已使用；App 於 Phase 3 使用）：讀取設定 → 有錯誤時顯示並停止 → `StorageInitializer.Check` 有錯誤時顯示並停止 → 將 `AppSettings` 與各 `IMonitor` 註冊到 DI → 寫啟動 Log → 執行 `MonitoringSession.RunAsync`。
 
 ## 5. 執行緒與生命週期
 

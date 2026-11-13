@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Phase 2-1（2026-11-13）：CPU 與單次取樣流程
+
+- 新增 CPU 監控：PDH `\Processor(_Total)\% Processor Time`，以英文名稱加入（不受語系影響）；暖機、0～100 檢查、失敗時下次重建查詢；不提供 WMI 備援。
+- 新增 PDH 封裝（LibraryImport）與可替換介面。
+- 新增主控台 `--once`（取樣一次並寫入 CSV／Log）與 `--once --json`；設定或目錄錯誤時不取樣並以結束碼 1 結束。
+- 啟動 Log 加入資料來源說明。
+- Smoke Test 改為實際取樣：檢查 CPU、SystemMetrics CSV 與 Application Log。
+- 文件：記錄盤點 M2、M7、C8、S4 的確認結果。
+
 ### Phase 1c（2026-11-13）：告警
 
 - 新增告警狀態機（NORMAL／PENDING／WARNING／COOLDOWN／RECOVERING／RECOVERED），持續、冷卻、遲滯、恢復時間與資料不可用時的行為沿用舊版規格 v1.5 §6。

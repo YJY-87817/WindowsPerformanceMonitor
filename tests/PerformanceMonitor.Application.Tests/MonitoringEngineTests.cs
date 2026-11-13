@@ -134,4 +134,31 @@ public class MonitoringEngineTests
         Assert.Equal([WarmUp, WarmUp + S(6), WarmUp + S(12)], monitor.SampledAt);
         Assert.True(_store.Latest!.LoopOverrun);
     }
+
+    [Fact]
+    public async Task RunOnceWarmsUpSamplesPublishesAndRecordsWithProcesses()
+    {
+        var monitor = new FakeMonitor("Cpu", _clock);
+        var engine = new MonitoringEngine(new SampleRunner([monitor], _clock, new FakeHostInfo()), _clock, new AppSettings(), _store, _recorder);
+
+        MonitorSnapshot snapshot = await engine.RunOnceAsync(CancellationToken.None);
+
+        Assert.Equal(1, monitor.WarmUpCount);
+        Assert.Equal([WarmUp], monitor.SampledAt);
+        Assert.Same(snapshot, _store.Latest);
+        var record = Assert.Single(_recorder.Records);
+        Assert.Same(snapshot, record.Snapshot);
+        Assert.True(record.IncludeProcesses);
+    }
+
+    [Fact]
+    public async Task RunOnceWithLoggingDisabledDoesNotRecord()
+    {
+        var settings = new AppSettings { Logging = new LoggingSettings { Enabled = false } };
+        var engine = new MonitoringEngine(new SampleRunner([new FakeMonitor("Cpu", _clock)], _clock, new FakeHostInfo()), _clock, settings, _store, _recorder);
+
+        await engine.RunOnceAsync(CancellationToken.None);
+
+        Assert.Empty(_recorder.Records);
+    }
 }

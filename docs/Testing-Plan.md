@@ -14,9 +14,9 @@
 | 4 | Unit Test | `dotnet test`（含覆蓋率） | 任何測試失敗 |
 | 5 | Build Check | `dotnet publish -r win-x64 --self-contained`（App、Cli） | 無法發行 |
 | 6 | Git Diff Check | `tools/diff-check.sh` | 空白錯誤、合併衝突標記、提交了 CSV／Log 或 Data／Logs 資料夾 |
-| 7 | Smoke Test | `tools/smoke-test.sh publish/Cli/PerformanceMonitor.Cli.exe` | `--self-check` 結束碼不是 0，或輸出沒有 `Self-check: OK` |
+| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 不是 OK 或使用率不在 0～100、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU 來源／單次取樣完成 |
 
-Phase 2 加入 `--once` 後，Smoke Test 改為實際取樣一次並檢查各模組狀態、CSV 與 Log（比照舊版）。
+之後每加入一個資料來源，Smoke Test 就加上該模組的檢查。
 
 ## 2. 本機執行
 
@@ -92,3 +92,13 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | 單元測試：告警狀態機（移植舊版 Pester 案例：持續時間、未滿即回 NORMAL、冷卻與再次通知、不重複通知、遲滯、恢復持續時間、恢復中斷回 COOLDOWN 且冷卻延續、資料不可用、時間為 0）、磁碟 any／all 條件、對象獨立、事件內容與 Log、最近 5 筆、磁碟移除、停用 | 同上 | Passed（183 個） |
 | 以上 | Windows CI | 見 PR 的 CI 結果 |
 | 實際觸發告警 | Windows 實機 | Not Tested（Phase 2 接上資料來源後） |
+
+### Phase 2-1（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：CPU 監控（英文計數器、暖機、0～100 檢查、讀取失敗、PDH 失敗後重建、無 pdh.dll）、單次取樣、文字與 JSON 輸出、啟動 Log 資料來源 | 同上 | Passed（200 個） |
+| Cli `--once`／`--once --json` 端對端（設定、啟動 Log、取樣、CSV、Log） | 同上（CPU 為 Unavailable，因為沒有 pdh.dll） | Passed |
+| Smoke Test 實際取樣（CPU OK、CSV、Log） | Windows CI | 見 PR 的 CI 結果 |
+| 繁體中文 Windows、Windows 10 | 實機 | Not Tested |
