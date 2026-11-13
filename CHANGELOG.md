@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Phase 1c（2026-11-13）：告警
+
+- 新增告警狀態機（NORMAL／PENDING／WARNING／COOLDOWN／RECOVERING／RECOVERED），持續、冷卻、遲滯、恢復時間與資料不可用時的行為沿用舊版規格 v1.5 §6。
+- CPU、RAM、各固定磁碟獨立管理；磁碟支援百分比與 GB 條件（any／all）。
+- 告警事件寫入 Application Log；提供進行中告警與最近 5 筆事件給 UI（`IAlertProvider`）。
+
 ### Phase 1b（2026-11-13）：CSV 與 Log
 
 - **資料格式 v1 定稿**：7 種 CSV（SystemMetrics、DiskMetrics、DiskIoMetrics、GpuMetrics、NetworkMetrics、ProcessMetrics、TemperatureMetrics）。
