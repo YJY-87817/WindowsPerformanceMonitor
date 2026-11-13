@@ -12,6 +12,7 @@
 | 版本 | 日期 | 狀態 | 內容 |
 |---|---|---|---|
 | 2.0 初稿 | 2026-11-13 | 初稿 | 建立文件：範圍、共通規格、資料、告警、平台；依 Phase 0 盤點結果整理 |
+| 2.0 初稿 | 2026-11-13 | Phase 2-4 | §4.4 程序 |
 | 2.0 初稿 | 2026-11-13 | Phase 2-3 | §4.3 磁碟容量 |
 | 2.0 初稿 | 2026-11-13 | Phase 2-2 | §4.2 記憶體 |
 | 2.0 初稿 | 2026-11-13 | Phase 2-1 | 盤點 M2、M7、C8、S4 確認；§4.1 CPU；§8 Cli `--once`、`--json` |
@@ -135,6 +136,18 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 異常 | 單一磁碟容量為 0 或無法取得、可用不合理為該磁碟 `Error`／`DataError`；尚未就緒或讀取失敗為該磁碟 `Error`／`TransientError`；不影響其他磁碟 |
 | 整體 | 依多裝置整體狀態規則；沒有任何固定磁碟為 `Unavailable`；列舉失敗為 `Error`／`TransientError` |
 | 告警 | 各磁碟可用空間告警自此生效（§6） |
+
+### 4.4 程序（Phase 2-4）
+
+| 項目 | 規格 |
+|---|---|
+| 來源 | `System.Diagnostics.Process`；每個程序物件讀完即釋放 |
+| 排序 | Working Set 由大到小，相同時依 PID；取前 `process.topCount`（1～20，預設 5）名，排名從 1 起算 |
+| 數值 | 程序名稱、PID、Working Set（MB，1,048,576 bytes）、啟動時間（UTC，輔助辨識 PID 重用；只讀前 N 名） |
+| 部分失敗 | 列舉後結束或 PID／Working Set 無法讀取：略過並計入 `SkippedProcessCount`；啟動時間無權讀取：留空並計入 `MissingFieldCount`；以上狀態仍為 `OK` |
+| 失敗 | 列舉失敗為 `Error`／`TransientError`；沒有任何可讀程序為 `Error`／`AccessDenied` |
+| 說明 | 不提供 CPU 排序；Working Set 加總不等於記憶體使用量 |
+| 隱私 | 程序名稱可能揭露使用者使用的軟體，只寫入本機 CSV（沿用 v1.5 §7.4） |
 
 ## 5. 資料與 Log
 
