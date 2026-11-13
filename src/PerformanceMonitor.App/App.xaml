@@ -18,6 +18,7 @@
         <SolidColorBrush x:Key="BannerBrush" Color="#FDECEA" />
 
         <conv:StatusKindToBrushConverter x:Key="StatusBrush" />
+        <conv:SeriesColorConverter x:Key="SeriesColor" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <Style TargetType="TextBlock">
@@ -44,6 +45,25 @@
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Padding" Value="12" />
             <Setter Property="Margin" Value="0,0,12,12" />
+        </Style>
+        <!-- 唯讀表格：可用鍵盤移動、可調整欄寬 -->
+        <Style TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False" />
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="CanUserAddRows" Value="False" />
+            <Setter Property="CanUserDeleteRows" Value="False" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="RowBackground" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="SelectionUnit" Value="FullRow" />
+        </Style>
+        <Style x:Key="ModuleStatus" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
         <Style TargetType="Button">
             <Setter Property="Padding" Value="14,4" />

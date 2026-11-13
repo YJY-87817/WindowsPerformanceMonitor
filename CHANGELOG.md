@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Phase 3b（2026-11-13）：即時趨勢與各分頁
+
+- 即時趨勢頁：最近 5 分鐘、WPF 原生折線圖（CPU 與記憶體、網路合計、各邏輯磁碟忙碌率、GPU 使用率、GPU 溫度）；無法取得或停止期間斷開，不連成假線。
+- 磁碟（容量與邏輯／實體 I/O）、網路（介面卡與合計）、溫度（GPU 與 ACPI 熱區，標示不是 CPU 溫度）、程序（RAM 前 N 名）頁。
+- Smoke Test 以 UI Automation 依序切換所有頁面。
+
 ### Phase 3a（2026-11-13）：WPF 監控啟停、總覽、狀態與錯誤
 
 - 新增 `PerformanceMonitor.Presentation`（ViewModel，不參考 WPF）與測試專案；新增依賴 CommunityToolkit.Mvvm（決策 0007）。

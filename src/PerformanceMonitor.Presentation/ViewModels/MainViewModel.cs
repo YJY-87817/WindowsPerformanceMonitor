@@ -2,7 +2,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PerformanceMonitor.Application.Monitoring;
 using PerformanceMonitor.Core.Abstractions;
+using PerformanceMonitor.Core.Settings;
 using PerformanceMonitor.Presentation.Text;
+using PerformanceMonitor.Presentation.Trends;
 
 namespace PerformanceMonitor.Presentation.ViewModels;
 
@@ -27,7 +29,9 @@ public sealed class MainViewModel : ObservableObject
         ISnapshotProvider snapshots,
         IAlertProvider alerts,
         IStorageStatus storage,
-        StartupStatus startup)
+        StartupStatus startup,
+        AppSettings settings,
+        TrendHistory trends)
     {
         ArgumentNullException.ThrowIfNull(storage);
         _controller = controller;
@@ -36,7 +40,12 @@ public sealed class MainViewModel : ObservableObject
         _startup = startup;
         Overview = new OverviewViewModel();
         Status = new StatusViewModel(storage, startup);
-        Pages = [Overview, Status];
+        Trend = new TrendViewModel(trends, settings);
+        Disk = new DiskViewModel();
+        Network = new NetworkViewModel();
+        Temperature = new TemperatureViewModel();
+        Process = new ProcessViewModel();
+        Pages = [Overview, Trend, Disk, Network, Temperature, Process, Status];
         _selectedPage = Overview;
         StartCommand = new RelayCommand(Start, () => CanStart);
         StopCommand = new AsyncRelayCommand(StopAsync, () => CanStop);
@@ -51,6 +60,21 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>狀態與錯誤頁。</summary>
     public StatusViewModel Status { get; }
+
+    /// <summary>即時趨勢頁。</summary>
+    public TrendViewModel Trend { get; }
+
+    /// <summary>磁碟頁。</summary>
+    public DiskViewModel Disk { get; }
+
+    /// <summary>網路頁。</summary>
+    public NetworkViewModel Network { get; }
+
+    /// <summary>溫度頁。</summary>
+    public TemperatureViewModel Temperature { get; }
+
+    /// <summary>程序頁。</summary>
+    public ProcessViewModel Process { get; }
 
     /// <summary>導覽清單。</summary>
     public IReadOnlyList<PageViewModel> Pages { get; }

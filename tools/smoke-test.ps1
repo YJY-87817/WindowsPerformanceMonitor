@@ -14,6 +14,7 @@
   3. （僅 Windows）以 settings.json 設定 network.includeNames = ["*"] 再取樣一次：
      網路必須為 OK 且有合計速度；NetworkMetrics CSV 含該次 SampleId。結束後移除設定檔。
   4. （僅 Windows，指定 -App 時）WPF 程式：開啟後自動開始監控（Application Log 有「監控開始」），
+     以 UI Automation 依序切換所有頁面（程式不得因畫面錯誤而結束），
      關閉主視窗後在 30 秒內結束，且先停止監控（Log 有「監控正常停止」、SystemMetrics CSV 有補寫的資料列）。
 .PARAMETER Exe
   PerformanceMonitor.Cli 執行檔路徑。
@@ -259,6 +260,36 @@ if ($App) {
             Write-Pass 'WPF：顯示主視窗並自動開始監控'
         }
 
+        # 依序切換所有頁面，讓每個頁面的 XAML 實際載入並繪製（含趨勢圖）。
+        try {
+            Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
+            $root = [System.Windows.Automation.AutomationElement]::FromHandle($process.MainWindowHandle)
+            $nav = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+                (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, '頁面')))
+            $items = @($nav.FindAll([System.Windows.Automation.TreeScope]::Children,
+                (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem))))
+            if ($items.Count -lt 7) {
+                Write-Fail "WPF 導覽只有 $($items.Count) 個頁面（應有 7 個）"
+            }
+            foreach ($item in $items) {
+                $item.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+                Start-Sleep -Milliseconds 1500
+                $process.Refresh()
+                if ($process.HasExited) {
+                    Write-Fail "WPF 切換到第 $([array]::IndexOf($items, $item) + 1) 個頁面後結束（結束碼 $($process.ExitCode)）"
+                    break
+                }
+            }
+            if (-not $process.HasExited -and $items.Count -ge 7) {
+                Write-Pass "WPF：依序切換 $($items.Count) 個頁面，程式正常"
+            }
+        } catch {
+            Write-Fail "WPF 頁面切換檢查失敗：$($_.Exception.Message)"
+        }
+
+        if ($process.HasExited) {
+            Write-Fail 'WPF 在關閉前已結束'
+        }
         $null = $process.CloseMainWindow()
         if (-not $process.WaitForExit(30000)) {
             Write-Fail 'WPF 關閉主視窗後 30 秒內沒有結束'

@@ -1,6 +1,6 @@
 # 架構
 
-- 版本：Phase 3a（2026-11-13）
+- 版本：Phase 3b（2026-11-13）
 - 相關決策：[0007 WPF 介面](decisions/0007-wpf-ui.md)、[0002 分層架構](decisions/0002-layered-architecture.md)、[0003 依賴套件](decisions/0003-dependencies.md)、[0004 主控台進入點](decisions/0004-cli-entry-point.md)
 
 ## 1. 分層與依賴方向
@@ -117,6 +117,10 @@ builder.Services
 
 | `MainViewModel`、`OverviewViewModel`、`StatusViewModel`、`StartupStatus` | Presentation | 主視窗（導覽、監控狀態、開始／停止、醒目提示）、總覽、狀態與錯誤頁 |
 | `UiText`、`ModuleSummary` | Presentation | 畫面文字（繁體中文）與各模組摘要 |
+| `TrendHistory` | Presentation | 訂閱每次取樣，保留最近 5 分鐘趨勢數值（執行緒安全） |
+| `TrendChartBuilder`、`TrendChart` | Presentation | 計算正規化座標、斷開線段、自動縱軸（純函式）；WPF 只負責繪製 |
+| `TrendViewModel`、`DiskViewModel`、`NetworkViewModel`、`TemperatureViewModel`、`ProcessViewModel` | Presentation | 即時趨勢與各分頁（表格列已格式化） |
+| `TrendChartControl` | App | WPF 原生折線圖（`OnRender` 依正規化座標繪製） |
 
 組裝點的啟動順序：`MonitoringStartup.Check`（讀取設定、檢查資料目錄）→ 將 `AppSettings` 與各 `IMonitor` 註冊到 DI →
 - Cli `--once`：有錯誤時顯示並以結束碼 1 結束；否則寫啟動 Log → `MonitoringSession.RunOnceAsync`。
