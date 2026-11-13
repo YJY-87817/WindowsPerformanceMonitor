@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<IHostInfo, HostInfo>();
         return services;
     }
 }
