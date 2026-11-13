@@ -1,6 +1,6 @@
 # 架構
 
-- 版本：Phase 1a（2026-11-13）
+- 版本：Phase 1b（2026-11-13）
 - 相關決策：[0002 分層架構](decisions/0002-layered-architecture.md)、[0003 依賴套件](decisions/0003-dependencies.md)、[0004 主控台進入點](decisions/0004-cli-entry-point.md)
 
 ## 1. 分層與依賴方向
@@ -71,17 +71,29 @@ builder.Services
 | `ISnapshotProvider` | Core | 最新快照與發布事件，給 UI 讀取 |
 | `ISnapshotRecorder` | Core | 寫入歷史紀錄；Phase 1b 以 CSV 實作（目前為 `NullSnapshotRecorder`） |
 | `StatusAggregator` | Core | 多裝置整體狀態規則 |
+| `CpuResult`、`MemoryResult`、`DiskResult`、`DiskIoResult`、`GpuResult`、`NetworkResult`、`ProcessResult`、`TemperatureResult` | Core | 各模組結果（資料契約）；多裝置模組實作 `IDeviceResult`，裝置為 `DeviceItem` 衍生型別 |
+| `IAppLog` | Core | 專用 Log 服務（Application／Error 兩個檔案） |
+| `IStorageStatus` | Core | CSV 寫入／遺失列數與最近錯誤 |
 | `AppSettings` | Core | 設定（各區塊為 record） |
 | `SettingsParser`／`SettingsValidator` | Application | 解析 JSON、檢查型別與範圍，一次列出所有錯誤 |
 | `IntervalSchedule` | Application | 單調時間格點：超時略過錯過的格點、不補跑 |
 | `SampleRunner` | Application | 依序執行模組一次，隔離失敗並組成快照 |
 | `MonitoringEngine` | Application | 主迴圈：暖機、取樣、發布、依格點寫入、停止時補寫 |
 | `SnapshotStore` | Application | `ISnapshotProvider` 實作 |
+| `StorageStatus` | Application | `IStorageStatus` 實作 |
+| `StatusLogTracker` | Application | Error Log 去重與 10 分鐘彙總 |
+| `MonitoringLogObserver` | Application | 依快照把模組／裝置狀態交給去重器、記錄 LoopOverrun |
+| `StartupLog` | Application | 啟動資訊寫入 Application Log |
+| `MonitoringSession` | Application | 接上 Log 觀察者、執行主迴圈、寫開始／停止 Log |
 | `SystemClock`、`HostInfo` | Infrastructure | `IClock`、`IHostInfo` 實作 |
 | `AppDataPaths` | Infrastructure | 根目錄、設定檔路徑、資料／Log 目錄解析 |
 | `SettingsFileLoader` | Infrastructure | 讀取 settings.json（不存在時用預設值） |
+| `CsvFormat`、`CsvTables` | Infrastructure | CSV 欄位格式與 7 種 CSV 的 schema v1 |
+| `CsvFileWriter`、`CsvSnapshotRecorder` | Infrastructure | UTF-8 BOM 附加寫入、鎖定重試；`ISnapshotRecorder` 實作 |
+| `DailyLogWriter` | Infrastructure | `IAppLog` 實作 |
+| `StorageInitializer` | Infrastructure | 啟動前確認 CSV／Log 目錄可寫入 |
 
-組裝點的啟動順序（App／Cli，Phase 1b 起使用）：讀取設定 → 有錯誤時顯示並停止 → 將 `AppSettings` 與各 `IMonitor` 註冊到 DI → 啟動 `MonitoringEngine.RunAsync`。
+組裝點的啟動順序（App／Cli，Phase 2 起使用）：讀取設定 → 有錯誤時顯示並停止 → `StorageInitializer.Check` 有錯誤時顯示並停止 → 將 `AppSettings` 與各 `IMonitor` 註冊到 DI → 寫啟動 Log → 執行 `MonitoringSession.RunAsync`。
 
 ## 5. 執行緒與生命週期
 
