@@ -71,11 +71,17 @@ public static class SnapshotFormatter
         string? value = result switch
         {
             CpuResult cpu => Percent(cpu.UsagePercent),
+            MemoryResult memory => memory.UsagePercent is null
+                ? "N/A"
+                : $"{Percent(memory.UsagePercent)} ({Number(memory.UsedGB, "0.00")} / {Number(memory.TotalGB, "0.00")} GB)",
             _ => null,
         };
         string? error = result.ErrorMessage is null ? null : $"[{result.ErrorCode}] {result.ErrorMessage}";
         return string.Join("  ", new[] { value, error }.Where(s => s is not null));
     }
+
+    private static string Number(double? value, string format) =>
+        value is double v ? v.ToString(format, CultureInfo.InvariantCulture) : "N/A";
 
     private static string Percent(double? value) =>
         value is double v ? v.ToString("0.0", CultureInfo.InvariantCulture) + "%" : "N/A";

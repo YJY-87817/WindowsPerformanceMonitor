@@ -12,6 +12,7 @@
 | 版本 | 日期 | 狀態 | 內容 |
 |---|---|---|---|
 | 2.0 初稿 | 2026-11-13 | 初稿 | 建立文件：範圍、共通規格、資料、告警、平台；依 Phase 0 盤點結果整理 |
+| 2.0 初稿 | 2026-11-13 | Phase 2-2 | §4.2 記憶體 |
 | 2.0 初稿 | 2026-11-13 | Phase 2-1 | 盤點 M2、M7、C8、S4 確認；§4.1 CPU；§8 Cli `--once`、`--json` |
 | 2.0 初稿 | 2026-11-13 | Phase 1c | §6 補上告警實作規則 |
 | 2.0 初稿 | 2026-11-13 | Phase 1b | §5 補上 CSV 寫入與 Log 的實作規則；Data-Schema 定為 v1 |
@@ -113,6 +114,15 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 無 PDH | 無法載入 pdh.dll（非 Windows）為 `Unavailable` |
 | 備援 | 不提供 WMI 備援（盤點 M2） |
 | 啟動 Log | 記錄 CPU 來源 |
+
+### 4.2 記憶體（Phase 2-2）
+
+| 項目 | 規格 |
+|---|---|
+| 來源 | Win32 `GlobalMemoryStatusEx`（不需 WMI） |
+| 數值 | 總量 `ullTotalPhys`；可用 `ullAvailPhys`（含待命清單，與工作管理員「可用」一致）；已使用 = 總量 − 可用；使用率 = 已使用 ÷ 總量 × 100；GB 為 1024 進位 |
+| 異常 | 總量為 0、可用大於總量為 `Error`／`DataError`（不除以 0）；API 失敗為 `Error`／`TransientError` |
+| 說明 | 記憶體使用率與程序 Working Set 加總不保證相等（快取、共享記憶體、核心使用量） |
 
 ## 5. 資料與 Log
 

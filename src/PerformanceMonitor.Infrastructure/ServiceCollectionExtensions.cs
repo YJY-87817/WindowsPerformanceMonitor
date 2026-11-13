@@ -6,6 +6,7 @@ using PerformanceMonitor.Infrastructure.Logging;
 using PerformanceMonitor.Infrastructure.Sensors;
 using PerformanceMonitor.Infrastructure.Storage;
 using PerformanceMonitor.Infrastructure.Storage.Csv;
+using PerformanceMonitor.Infrastructure.Windows.Memory;
 using PerformanceMonitor.Infrastructure.Windows.Pdh;
 
 namespace PerformanceMonitor.Infrastructure;
@@ -29,7 +30,9 @@ public static class ServiceCollectionExtensions
 
         // 監控模組：註冊順序即取樣與輸出順序。
         services.AddSingleton<IPdhQueryFactory, PdhQueryFactory>();
+        services.AddSingleton<IMemoryStatusSource, GlobalMemoryStatusSource>();
         services.AddSingleton<IMonitor, CpuMonitor>();
+        services.AddSingleton<IMonitor, MemoryMonitor>();
         return services;
     }
 }
