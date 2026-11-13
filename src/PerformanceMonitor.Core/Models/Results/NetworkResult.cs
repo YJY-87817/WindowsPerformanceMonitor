@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using PerformanceMonitor.Core.Enums;
 
 namespace PerformanceMonitor.Core.Models.Results;
@@ -14,6 +15,7 @@ public sealed record NetworkResult(
     double? TotalUploadMbps) : ModuleResult(ModuleNames.Network, Status), IDeviceResult
 {
     /// <inheritdoc />
+    [JsonIgnore]
     public IEnumerable<DeviceItem> Devices => Adapters;
 }
 

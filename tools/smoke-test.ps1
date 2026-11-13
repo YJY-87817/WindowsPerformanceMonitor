@@ -4,7 +4,8 @@
   Smoke Test：執行發行後的主控台程式。
   1. --self-check 必須通過。
   2. （僅 Windows）--once --json 實際取樣一次：
-     CPU、記憶體必須為 OK 且使用率介於 0～100；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
+     CPU、記憶體必須為 OK 且使用率介於 0～100；磁碟容量必須為 OK 且至少一個固定磁碟；
+     DiskMetrics CSV 含本次 SampleId；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
      Application Log 有啟動、CPU 來源與「單次取樣完成」。
 .PARAMETER Exe
   PerformanceMonitor.Cli 執行檔路徑。
@@ -62,6 +63,18 @@ if ($null -ne $memory -and $memory.status -eq 'OK' -and -not ($memory.totalGB -g
     Write-Fail "Memory 容量不合理：total $($memory.totalGB)、used $($memory.usedGB)、free $($memory.freeGB)"
 }
 
+$disk = $result.modules | Where-Object module -EQ 'Disk'
+if ($null -eq $disk -or $disk.status -ne 'OK' -or @($disk.disks).Count -eq 0) {
+    Write-Fail "Disk 狀態 $($disk.status)、磁碟數 $(@($disk.disks).Count)、錯誤 $($disk.errorMessage)"
+} else {
+    foreach ($d in $disk.disks) {
+        if ($d.status -ne 'OK' -or $d.totalGB -le 0 -or $d.usedPercent -lt 0 -or $d.usedPercent -gt 100) {
+            Write-Fail "磁碟 $($d.drive) 狀態 $($d.status)、總量 $($d.totalGB)、使用率 $($d.usedPercent)"
+        }
+    }
+    Write-Pass "Disk：OK，$((@($disk.disks) | ForEach-Object { "$($_.drive) $([math]::Round($_.usedPercent, 1))%" }) -join '、')"
+}
+
 if ($result.csv.lostRows -ne 0 -or $result.csv.writtenRows -lt 1) {
     Write-Fail "CSV 寫入 $($result.csv.writtenRows) 列、遺失 $($result.csv.lostRows) 列：$($result.csv.lastError)"
 }
@@ -90,6 +103,13 @@ if (-not (Test-Path -LiteralPath $csvPath)) {
     } else {
         Write-Pass "SystemMetrics CSV：BOM、標題列、本次資料列（共 $($lines.Count - 1) 列）"
     }
+}
+
+$diskCsv = Join-Path $root "Data\DiskMetrics_v1_$date.csv"
+if (-not (Test-Path -LiteralPath $diskCsv) -or -not ([System.IO.File]::ReadAllLines($diskCsv) | Where-Object { $_.StartsWith("$($result.sampleId),") })) {
+    Write-Fail "DiskMetrics CSV 不存在或沒有本次 SampleId：$diskCsv"
+} else {
+    Write-Pass 'DiskMetrics CSV：有本次資料列'
 }
 
 $logPath = Join-Path $root "Logs\Application_$date.log"

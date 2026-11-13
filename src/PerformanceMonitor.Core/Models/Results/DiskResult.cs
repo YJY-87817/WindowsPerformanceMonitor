@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using PerformanceMonitor.Core.Enums;
 
 namespace PerformanceMonitor.Core.Models.Results;
@@ -8,6 +9,7 @@ namespace PerformanceMonitor.Core.Models.Results;
 public sealed record DiskResult(MonitorStatus Status, IReadOnlyList<DiskItem> Disks) : ModuleResult(ModuleNames.Disk, Status), IDeviceResult
 {
     /// <inheritdoc />
+    [JsonIgnore]
     public IEnumerable<DeviceItem> Devices => Disks;
 }
 
