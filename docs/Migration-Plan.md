@@ -16,7 +16,7 @@
 | M4 | 磁碟容量（固定磁碟） | §3.4 | CIM `Win32_LogicalDisk`（DriveType 3） | 改善 | `System.IO.DriveInfo`（`DriveType.Fixed`） | 2 |
 | M5 | 磁碟 I/O | — | 舊版無 | 新增（已確認；Phase 2-5 確認加入實體磁碟） | PDH `\LogicalDisk(*)\…`、`\PhysicalDisk(*)\…`；見規格 v2.0 §4.5 | 2 |
 | M6 | NVIDIA GPU 使用率、顯存 | §3.5 | `nvidia-smi`，逾時 Kill | 保留＋新增溫度（已確認） | `Process` 執行 `nvidia-smi`，一次查詢含 `temperature.gpu`；解析規則沿用 v1.4 決策；尋找改為只找 System32 與 `%ProgramFiles%\NVIDIA Corporation\NVSMI`，不搜尋 PATH（Phase 2-6 確認） | 2 |
-| M7 | 網路介面卡流量 | §3.6 | CIM `MSFT_NetAdapter*` | 保留，改用 Win32 `GetIfTable2`（已確認） | 有「是否硬體介面卡」旗標與連線速度，篩選結果最接近舊版 | 2 |
+| M7 | 網路介面卡流量 | §3.6 | CIM `MSFT_NetAdapter*` | 保留，改用 Win32 `GetIfTable2`（已確認） | 有「是否硬體介面卡」旗標與連線速度，篩選結果最接近舊版。欄位對應（Phase 2-7 確認）：Hidden → 篩選層／回送介面一律不列入；實體 → HardwareInterface＋ConnectorPresent＋無虛擬關鍵字；見規格 v2.0 §4.7 | 2 |
 | M8 | 網路篩選規則、合計、速度尖峰 1.1 倍檢查 | §3.6.1 | 見 v1.4 決策 | 保留 | 規則移植為純函式並沿用舊版測試案例 | 2 |
 | M9 | 程序 RAM Top N | §3.7 | `Get-Process`，WorkingSet64 | 保留 | `Process.GetProcesses()`；讀取失敗略過並計數 | 2 |
 | M10 | ACPI 熱區溫度 | — | 舊版無 | 新增（已確認） | PDH `\Thermal Zone Information(*)\Temperature`（K → °C） | 2 |
@@ -58,7 +58,7 @@
 | D7 | 程序紀錄獨立開關與間隔 | §5.2 | 保留 | | 1 |
 | D8 | 資料目錄：程式旁 → 寫不進去改 `%LOCALAPPDATA%` | §5.1 | 改善（已確認） | 預設 `%LOCALAPPDATA%\WindowsPerformanceMonitor`；設定的目錄寫不進去時不開始監控並提示，不自動改寫到其他位置。見決策 0005 | 1 |
 | D9 | Application／Error Log、格式、去重、10 分鐘彙總 | §5.6 | 保留 | | 1 |
-| D10 | 啟動 Log：版本、設定摘要、CPU 來源、網路篩選結果 | §5.6 | 保留 | | 1／2 |
+| D10 | 啟動 Log：版本、設定摘要、CPU 來源、網路篩選結果 | §5.6 | 保留（已完成） | 各模組 `SourceDescription`；網路列出納入與排除原因 | 1／2 |
 
 ## 5. 設定、介面與工具
 

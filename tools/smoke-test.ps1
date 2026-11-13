@@ -7,8 +7,11 @@
      CPU、記憶體必須為 OK 且使用率介於 0～100；磁碟容量必須為 OK 且至少一個固定磁碟；
      磁碟 I/O 必須為 OK，且至少一個邏輯磁碟與一個實體磁碟為 OK、數值不為負、忙碌率介於 0～100；
      GPU 必須為 OK（數值合理）或 Unavailable（CI 沒有 NVIDIA GPU），不得為 Error；
+     網路必須為 OK 或 Unavailable（CI 唯一的網卡是預設排除的 Hyper-V 介面卡），不得為 Error；
      程序 Top N 為 OK；DiskMetrics、DiskIoMetrics、GpuMetrics、ProcessMetrics CSV 含本次 SampleId；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
-     Application Log 有啟動、CPU 來源與「單次取樣完成」。
+     Application Log 有啟動、CPU、GPU 與網路來源與「單次取樣完成」。
+  3. （僅 Windows）以 settings.json 設定 network.includeNames = ["*"] 再取樣一次：
+     網路必須為 OK 且有合計速度；NetworkMetrics CSV 含該次 SampleId。結束後移除設定檔。
 .PARAMETER Exe
   PerformanceMonitor.Cli 執行檔路徑。
 #>
@@ -107,6 +110,13 @@ if ($null -eq $gpu -or $gpu.status -notin @('OK', 'Unavailable')) {
     Write-Pass "Gpu：OK，$((@($gpu.gpus) | ForEach-Object { "GPU $($_.gpuIndex) $($_.gpuName) $($_.usagePercent)% $($_.temperatureC)°C" }) -join '、')"
 }
 
+$network = $result.modules | Where-Object module -EQ 'Network'
+if ($null -eq $network -or $network.status -notin @('OK', 'Unavailable')) {
+    Write-Fail "Network（預設篩選）狀態 $($network.status)、錯誤 [$($network.errorCode)] $($network.errorMessage)"
+} else {
+    Write-Pass "Network（預設篩選）：$($network.status)，$(@($network.adapters).Count) 張介面卡$(if ($network.errorMessage) { "（$($network.errorMessage)）" })"
+}
+
 $process = $result.modules | Where-Object module -EQ 'Process'
 $top = @($process.processes)
 if ($null -eq $process -or $process.status -ne 'OK' -or $top.Count -lt 1 -or $top.Count -gt 5 -or ($top | Where-Object { $_.workingSetMB -lt 0 })) {
@@ -159,14 +169,43 @@ if (-not (Test-Path -LiteralPath $logPath)) {
     Write-Fail "找不到 $logPath"
 } else {
     $log = Get-Content -LiteralPath $logPath -Encoding utf8
-    foreach ($expected in @('[Startup] Windows Performance Monitor', '[Startup] CPU 來源：PDH', '[Startup] GPU 來源：nvidia-smi', '[Monitor] 單次取樣完成')) {
+    foreach ($expected in @('[Startup] Windows Performance Monitor', '[Startup] CPU 來源：PDH', '[Startup] GPU 來源：nvidia-smi', '[Startup] 網路來源：Win32 GetIfTable2；', '[Monitor] 單次取樣完成')) {
         if (-not ($log | Where-Object { $_.Contains($expected) })) {
             Write-Fail "Application Log 缺少「$expected」"
         }
     }
     if (-not $script:Failed) {
-        Write-Pass 'Application Log：啟動、CPU 與 GPU 來源、單次取樣完成'
+        Write-Pass 'Application Log：啟動、CPU／GPU／網路來源、單次取樣完成'
     }
+}
+
+# 3. 納入所有介面卡再取樣一次，驗證網路速度可計算（CI 預設篩選下沒有可納入的介面卡）。
+$settingsPath = Join-Path $root 'settings.json'
+$backup = if (Test-Path -LiteralPath $settingsPath) { [System.IO.File]::ReadAllBytes($settingsPath) } else { $null }
+try {
+    [System.IO.File]::WriteAllText($settingsPath, '{ "network": { "includeNames": ["*"] } }')
+    $raw2 = & $Exe --once --json
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "includeNames=* 時 --once --json 結束碼 $LASTEXITCODE"
+    } else {
+        $result2 = ($raw2 -join "`n") | ConvertFrom-Json
+        $network2 = $result2.modules | Where-Object module -EQ 'Network'
+        $summary = "$((@($network2.adapters) | ForEach-Object { "$($_.adapterName) $($_.status)" }) -join '、')"
+        if ($null -eq $network2 -or $network2.status -ne 'OK' -or $null -eq $network2.totalDownloadMbps -or $null -eq $network2.totalUploadMbps) {
+            Write-Fail "Network（includeNames=*）狀態 $($network2.status)、合計 $($network2.totalDownloadMbps) / $($network2.totalUploadMbps)、錯誤 $($network2.errorMessage)、介面卡 $summary"
+        } else {
+            $ok = @($network2.adapters | Where-Object status -EQ 'OK').Count
+            Write-Pass ("Network（includeNames=*）：OK，合計下載 {0:N2} / 上傳 {1:N2} Mbps（{2} / {3} 張）：{4}" -f $network2.totalDownloadMbps, $network2.totalUploadMbps, $ok, @($network2.adapters).Count, $summary)
+        }
+        $networkCsv = Join-Path $root "Data\NetworkMetrics_v1_$date.csv"
+        if (-not (Test-Path -LiteralPath $networkCsv) -or -not ([System.IO.File]::ReadAllLines($networkCsv) | Where-Object { $_.StartsWith("$($result2.sampleId),") })) {
+            Write-Fail "NetworkMetrics CSV 不存在或沒有 includeNames=* 那次的 SampleId：$networkCsv"
+        } else {
+            Write-Pass 'NetworkMetrics CSV：有本次資料列'
+        }
+    }
+} finally {
+    if ($null -ne $backup) { [System.IO.File]::WriteAllBytes($settingsPath, $backup) } else { Remove-Item -LiteralPath $settingsPath -ErrorAction SilentlyContinue }
 }
 
 if ($script:Failed) { exit 1 }

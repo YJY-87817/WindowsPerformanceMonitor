@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Phase 2-7（2026-11-13）：網路
+
+- 新增網路介面卡流量：Win32 `GetIfTable2`（不需 WMI）；篩選規則、速度計算、計數器重設、1.1 倍尖峰、合計與指定介面卡行為移植自舊版。
+- GetIfTable2 欄位對應：篩選層與回送介面一律不列入；實體介面卡為 HardwareInterface＋ConnectorPresent 且無虛擬關鍵字。
+- 啟動 Log 記錄網路篩選結果（納入與排除原因）。
+- 主控台文字輸出加入網路合計與各介面卡；Smoke Test 檢查預設篩選與 `includeNames = ["*"]` 兩種情況及 NetworkMetrics CSV。
+
 ### Phase 2-6（2026-11-13）：NVIDIA GPU
 
 - 新增 GPU 監控：nvidia-smi 一次查詢使用率、顯存與溫度；多張 GPU、名稱含逗號、不支援欄位留空、數值檢查；逾時或停止時結束程序。
