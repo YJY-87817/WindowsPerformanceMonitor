@@ -12,6 +12,7 @@
 | 版本 | 日期 | 狀態 | 內容 |
 |---|---|---|---|
 | 2.0 初稿 | 2026-11-13 | 初稿 | 建立文件：範圍、共通規格、資料、告警、平台；依 Phase 0 盤點結果整理 |
+| 2.0 初稿 | 2026-11-13 | Phase 2-6 | §4.6 NVIDIA GPU；nvidia-smi 只在固定位置尋找（不搜尋 PATH） |
 | 2.0 初稿 | 2026-11-13 | Phase 2-5 | §4.5 磁碟 I/O（邏輯磁碟加實體磁碟） |
 | 2.0 初稿 | 2026-11-13 | Phase 2-4 | §4.4 程序 |
 | 2.0 初稿 | 2026-11-13 | Phase 2-3 | §4.3 磁碟容量 |
@@ -162,6 +163,21 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 失敗 | PDH 查詢失敗為 `Error`／`TransientError`，下次取樣重新建立查詢；無 pdh.dll 為 `Unavailable` |
 | 整體 | 依多裝置整體狀態規則；沒有任何磁碟為 `Unavailable` |
 | 說明 | 延遲是計數器層級的平均服務時間，不等同應用程式端到端延遲；邏輯與實體磁碟是同一份 I/O 的兩種角度，不可相加 |
+
+### 4.6 NVIDIA GPU（Phase 2-6）
+
+| 項目 | 規格 |
+|---|---|
+| 來源 | `nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits`；參數固定，不接受使用者輸入 |
+| 尋找 | **只找兩個固定位置**（2026-11-13 確認，與 v1.4 不同）：系統目錄 `C:\Windows\System32\nvidia-smi.exe`（新版驅動程式）→ `%ProgramFiles%\NVIDIA Corporation\NVSMI\nvidia-smi.exe`（舊版驅動程式）。不搜尋 PATH，避免執行使用者可寫入資料夾中的同名程式。每次取樣重新尋找，驅動程式安裝或恢復後自動回到 `OK` |
+| 執行 | `System.Diagnostics.Process`，參數以清單傳入、不開視窗、非同步讀取輸出；`timeouts.gpuSeconds`（預設 3 秒）逾時即結束程序（含子程序）並回報 `Error`／`Timeout`；停止監控時同樣結束程序。同一時間只有一個 nvidia-smi |
+| 解析 | 第一欄為 index、最後四欄為數值、中間合併為名稱（名稱可能含逗號）；Invariant Culture；依 index 排序 |
+| 數值 | 使用率（%）、顯存已使用／總量（MB，nvidia-smi 原值）、溫度（°C） |
+| 不支援欄位 | `[N/A]`、`N/A`、`[Not Supported]`、`[Unknown Error]`、`[Insufficient Permissions]` 留空，GPU 仍為 `OK`（沿用 v1.4） |
+| 異常 | 欄位數不足、index 不是整數、非數字、使用率超出 0～100、顯存為負或大於總量、溫度超出 0～150°C → 該 GPU `Error`／`DataError`，其他 GPU 照常 |
+| 無法使用 | 找不到 nvidia-smi 或回報沒有裝置 → `Unavailable`；非零結束碼 → `Error`／`TransientError`（附輸出摘要）；無法啟動 → `Error`／`TransientError`；沒有輸出 → `Error`／`DataError` |
+| 溫度紀錄 | 寫入 TemperatureMetrics（`SensorType = Gpu`），見 [Data-Schema](Data-Schema.md) §3.4 |
+| 不支援 | AMD／Intel GPU（`Unavailable`） |
 
 ## 5. 資料與 Log
 

@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Phase 2-6（2026-11-13）：NVIDIA GPU
+
+- 新增 GPU 監控：nvidia-smi 一次查詢使用率、顯存與溫度；多張 GPU、名稱含逗號、不支援欄位留空、數值檢查；逾時或停止時結束程序。
+- **與舊版不同**：nvidia-smi 只在 `C:\Windows\System32` 與 `%ProgramFiles%\NVIDIA Corporation\NVSMI` 尋找，不搜尋 PATH。
+- GPU 溫度寫入 TemperatureMetrics（`SensorType = Gpu`）。
+- 主控台文字輸出加入 GPU；Smoke Test 檢查 GPU（CI 沒有 GPU，預期 Unavailable）與 GpuMetrics CSV。
+
 ### Phase 2-5（2026-11-13）：磁碟 I/O
 
 - 新增磁碟 I/O 監控：PDH 萬用字元計數器 `\LogicalDisk(*)`、`\PhysicalDisk(*)`（英文名稱加入）；讀寫 MB/s、IOPS、延遲、忙碌率；邏輯磁碟與磁碟容量模組相同，另列實體磁碟；暖機、單一磁碟異常不影響其他磁碟。

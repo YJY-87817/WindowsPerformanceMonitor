@@ -80,4 +80,23 @@ public class SnapshotFormatterTests
         Assert.Equal(3, root.GetProperty("csv").GetProperty("writtenRows").GetInt64());
         Assert.Contains("找不到 nvidia-smi", json, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Text_ShowsGpuValues()
+    {
+        MonitorSnapshot snapshot = Snapshot with
+        {
+            Results =
+            [
+                new GpuResult(MonitorStatus.Error, [
+                    new GpuItem(MonitorStatus.OK, 0, "RTX 4060", 35, 2048, 8192, 61),
+                    new GpuItem(MonitorStatus.Error, 1, "RTX 3060", null, null, null, null),
+                ]),
+            ],
+        };
+
+        string text = SnapshotFormatter.ToText(snapshot, Storage());
+
+        Assert.Contains("Gpu          Error        GPU 0 RTX 4060 35.0%, 2048 / 8192 MB, 61°C; GPU 1 Error", text, StringComparison.Ordinal);
+    }
 }

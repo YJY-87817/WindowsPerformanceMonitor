@@ -80,6 +80,9 @@ public static class SnapshotFormatter
             DiskIoResult io => string.Join("; ", io.Disks.Select(d => d.Status == Core.Enums.MonitorStatus.OK
                 ? $"{d.DeviceId} R {Number(d.ReadMBps, "0.00")} / W {Number(d.WriteMBps, "0.00")} MB/s, busy {Percent(d.BusyPercent)}"
                 : $"{d.DeviceId} {d.Status}")),
+            GpuResult gpu => string.Join("; ", gpu.Gpus.Select(g => g.Status == Core.Enums.MonitorStatus.OK
+                ? $"{g.DeviceId} {g.GpuName} {Percent(g.UsagePercent)}, {Number(g.MemoryUsedMB, "0")} / {Number(g.MemoryTotalMB, "0")} MB, {Number(g.TemperatureC, "0")}°C"
+                : $"{g.DeviceId} {g.Status}")),
             ProcessResult process => string.Join(", ", process.Processes.Take(3).Select(p => $"{p.ProcessName} {Number(p.WorkingSetMB, "0.0")} MB")),
             _ => null,
         };

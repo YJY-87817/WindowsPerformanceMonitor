@@ -7,6 +7,7 @@ using PerformanceMonitor.Infrastructure.Sensors;
 using PerformanceMonitor.Infrastructure.Storage;
 using PerformanceMonitor.Infrastructure.Storage.Csv;
 using PerformanceMonitor.Infrastructure.Windows.Disk;
+using PerformanceMonitor.Infrastructure.Windows.Gpu;
 using PerformanceMonitor.Infrastructure.Windows.Memory;
 using PerformanceMonitor.Infrastructure.Windows.Pdh;
 using PerformanceMonitor.Infrastructure.Windows.Processes;
@@ -38,6 +39,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDriveSource, DriveInfoSource>();
         services.AddSingleton<IMonitor, DiskMonitor>();
         services.AddSingleton<IMonitor, DiskIoMonitor>();
+        services.AddSingleton<INvidiaSmiLocator, NvidiaSmiLocator>();
+        services.AddSingleton<ICommandRunner, ProcessCommandRunner>();
+        services.AddSingleton<IMonitor, GpuMonitor>();
         services.AddSingleton<IProcessSource, SystemProcessSource>();
         services.AddSingleton<IMonitor, ProcessMonitor>();
         return services;

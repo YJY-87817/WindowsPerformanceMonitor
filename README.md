@@ -2,7 +2,7 @@
 
 Windows 個人電腦效能監控工具 V2.0：以 C# + .NET 10 + WPF 重寫舊版 PowerShell 工具。
 
-> 目前狀態：**Phase 2**（Windows 資料來源）。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、程序 RAM Top N；其他資料來源依序加入中。WPF 介面於 Phase 3 提供。
+> 目前狀態：**Phase 2**（Windows 資料來源）。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、NVIDIA GPU、程序 RAM Top N；其他資料來源依序加入中。WPF 介面於 Phase 3 提供。
 
 舊版（PowerShell V1.0）與需求來源：[Windows_PC_Performance_Monitor_Specification](https://github.com/YJY-87817/Windows_PC_Performance_Monitor_Specification)（規格書 v1.5、開發規劃 v2.1）。
 
