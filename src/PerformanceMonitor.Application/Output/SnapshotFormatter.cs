@@ -83,6 +83,10 @@ public static class SnapshotFormatter
             GpuResult gpu => string.Join("; ", gpu.Gpus.Select(g => g.Status == Core.Enums.MonitorStatus.OK
                 ? $"{g.DeviceId} {g.GpuName} {Percent(g.UsagePercent)}, {Number(g.MemoryUsedMB, "0")} / {Number(g.MemoryTotalMB, "0")} MB, {Number(g.TemperatureC, "0")}°C"
                 : $"{g.DeviceId} {g.Status}")),
+            NetworkResult network => network.Adapters.Count == 0 ? null : string.Join("; ", network.Adapters.Select(a => a.Status == Core.Enums.MonitorStatus.OK
+                ? $"{a.AdapterName} down {Number(a.DownloadMbps, "0.00")} / up {Number(a.UploadMbps, "0.00")} Mbps"
+                : $"{a.AdapterName} {a.Status}").Prepend(
+                    $"Total down {Number(network.TotalDownloadMbps, "0.00")} / up {Number(network.TotalUploadMbps, "0.00")} Mbps ({network.Adapters.Count(a => a.Status == Core.Enums.MonitorStatus.OK)} of {network.Adapters.Count} adapters)")),
             ProcessResult process => string.Join(", ", process.Processes.Take(3).Select(p => $"{p.ProcessName} {Number(p.WorkingSetMB, "0.0")} MB")),
             _ => null,
         };

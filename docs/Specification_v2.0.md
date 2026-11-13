@@ -12,6 +12,7 @@
 | 版本 | 日期 | 狀態 | 內容 |
 |---|---|---|---|
 | 2.0 初稿 | 2026-11-13 | 初稿 | 建立文件：範圍、共通規格、資料、告警、平台；依 Phase 0 盤點結果整理 |
+| 2.0 初稿 | 2026-11-13 | Phase 2-7 | §4.7 網路（GetIfTable2 欄位對應） |
 | 2.0 初稿 | 2026-11-13 | Phase 2-6 | §4.6 NVIDIA GPU；nvidia-smi 只在固定位置尋找（不搜尋 PATH） |
 | 2.0 初稿 | 2026-11-13 | Phase 2-5 | §4.5 磁碟 I/O（邏輯磁碟加實體磁碟） |
 | 2.0 初稿 | 2026-11-13 | Phase 2-4 | §4.4 程序 |
@@ -179,6 +180,23 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 溫度紀錄 | 寫入 TemperatureMetrics（`SensorType = Gpu`），見 [Data-Schema](Data-Schema.md) §3.4 |
 | 不支援 | AMD／Intel GPU（`Unavailable`） |
 
+### 4.7 網路（Phase 2-7）
+
+| 項目 | 規格 |
+|---|---|
+| 來源 | Win32 `GetIfTable2`（iphlpapi.dll，不需 WMI；盤點 M7）；累積位元組 `InOctets`／`OutOctets`，連線速度 `ReceiveLinkSpeed`／`TransmitLinkSpeed` |
+| 識別 | `InterfaceGuid`；名稱為 Alias（例如 `Ethernet`、`Wi-Fi`），描述為驅動程式名稱 |
+| 欄位對應（2026-11-13 確認） | 舊版 `Hidden` → 篩選層介面（`FilterInterface`）或回送介面，**一律不列入**，`includeNames = ["*"]` 也不納入（避免同一張網卡被重複計算）。實體介面卡 → `HardwareInterface` 且 `ConnectorPresent`，且名稱與描述都不符合內建虛擬關鍵字。連線中 → `OperStatus = Up` |
+| 篩選 | 沿用 v1.5 §3.6.1（v1.4 決策）：`excludeNames` 優先；`includeNames` 有內容時取代預設判斷；否則只納入連線中、且（`physicalOnlyByDefault`）為實體的介面卡。萬用字元 `*`、`?`，不分大小寫，名稱或描述任一整段符合即算 |
+| 虛擬關鍵字 | Hyper-V、Virtual、VPN、TAP-、WireGuard、Wintun、WSL、Docker、Loopback、Teredo、ISATAP、6to4、Tunnel、VMware、VirtualBox、Npcap、WAN Miniport、Tailscale、ZeroTier、Kernel Debug |
+| 速度 | `bytes × 8 ÷ 秒 ÷ 1,000,000`（十進位 Mbps），以單調時間計算經過秒數 |
+| 暖機與重設 | 第一次取樣、名稱或描述改變、計數器變小、經過時間不大於 0、超過連線速度 1.1 倍 → `WarmingUp`（不顯示 0 或負值）；取不到連線速度時不做尖峰檢查。啟動時與 CPU 一起暖機 1 秒 |
+| 指定介面卡 | `includeNames` 指定但未連線 → 該介面卡 `Unavailable`（not connected）並捨棄基準；樣式完全找不到介面卡 → 以樣式名稱顯示 `Unavailable`（not found） |
+| 合計 | 只加總 `OK` 的介面卡；畫面標示 n / m 張；沒有 `OK` 時為空。`aggregateIncludedAdaptersOnly` 保留但不影響行為（只列納入的介面卡，沿用 v1.5 附錄記錄） |
+| 失敗 | `GetIfTable2` 失敗 → `Error`／`TransientError`，保留基準，恢復後以實際經過時間繼續計算；沒有任何符合的介面卡 → `Unavailable` |
+| 啟動 Log | 記錄篩選結果：納入的介面卡與排除的介面卡及原因（篩選層與回送介面不列出） |
+| 說明 | 顯示的是介面卡流量，不代表單一應用程式流量；同時納入實體與虛擬介面卡時合計可能重複計算 |
+
 ## 5. 資料與 Log
 
 見 [Data-Schema](Data-Schema.md) 與 [決策 0005](decisions/0005-data-storage.md)。重點：
@@ -189,7 +207,7 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 - 鎖定處理：每次寫入開檔即關；鎖定時 200 ms 後重試 `logging.lockedFileRetryCount` 次，仍失敗則略過該檔本次的資料、累計遺失列數，並寫入 Error Log（去重）；下個紀錄週期照常再試，成功後寫一筆恢復紀錄。未成功的資料不在記憶體中堆積。
 - 寫入統計：已寫入與遺失列數、最近錯誤，供畫面醒目顯示；停止時寫入 Application Log。
 - Log 格式：一行一筆 `yyyy-MM-ddTHH:mm:ss.fffzzz [INFO|WARN|ERROR] [來源] 訊息`；UTF-8 BOM；每日分檔（本機日期）；訊息內換行轉為空白。Log 本身寫入失敗只計數，不中斷監控。
-- Application Log：啟動（版本、設定來源與警告、使用預設值的欄位、週期、模組啟用狀態、告警門檻、CSV／Log 目錄）、監控開始、LoopOverrun（首次寫入，持續時每 10 分鐘彙總）、停止（正常停止含本次寫入／遺失列數；未預期例外寫「監控異常結束」）。CPU 來源與網路篩選結果於 Phase 2 補寫，告警事件於 Phase 1c 補寫。
+- Application Log：啟動（版本、設定來源與警告、使用預設值的欄位、週期、模組啟用狀態、告警門檻、CSV／Log 目錄）、監控開始、LoopOverrun（首次寫入，持續時每 10 分鐘彙總）、停止（正常停止含本次寫入／遺失列數；未預期例外寫「監控異常結束」）。各資料來源（含網路篩選結果）已於 Phase 2 補寫，告警事件於 Phase 1c 補寫。
 - Error Log 去重：各模組、各裝置、各 CSV 檔分別追蹤。`Error` 在首次發生、錯誤代碼或訊息改變時寫入（含錯誤代碼、摘要與處理方式）；相同錯誤持續時每 10 分鐘寫一筆「過去 10 分鐘又發生 N 次」。`Unavailable` 只在首次發現與內容改變時寫入。回到其他狀態時寫一筆恢復紀錄。多裝置模組沒有模組層級錯誤時，只依各裝置記錄。
 - 本機時間欄位 `TimestampLocal` 只在 SystemMetrics；其他檔以 `SampleId` 對應。
 - 目錄寫不進去：啟動時實際寫入、刪除一個暫存檔確認；失敗時不開始監控並提示原因，不自動改寫到其他位置。

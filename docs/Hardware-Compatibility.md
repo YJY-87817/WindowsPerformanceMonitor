@@ -23,9 +23,9 @@
 | 記憶體 | Win32 `GlobalMemoryStatusEx` | 一般使用者 | 資料不合理 `Error`（DataError）；API 失敗 `Error`（TransientError） | Windows CI Passed；Windows 11／10 Not Tested |
 | 磁碟容量 | `System.IO.DriveInfo`（固定磁碟） | 一般使用者 | 該磁碟 `Error`；沒有固定磁碟 `Unavailable` | Windows CI Passed（C:、D:）；USB 固定磁碟、BitLocker 鎖定磁碟 Not Tested |
 | 磁碟 I/O | PDH `\LogicalDisk(*)\…`、`\PhysicalDisk(*)\…`（萬用字元，英文名稱加入） | 一般使用者 | 第一次 `WarmingUp`；固定磁碟沒有計數器資料 `Unavailable`；讀取失敗 `Error`；無 pdh.dll `Unavailable` | Windows CI Passed（C:、D: 與實體磁碟 0、1）；繁體中文、USB 插拔、RAID／儲存空間 Not Tested |
-| NVIDIA GPU | `nvidia-smi`（只找 `C:\Windows\System32`，再找 `%ProgramFiles%\NVIDIA Corporation\NVSMI`；不搜尋 PATH） | 一般使用者 | 找不到工具或沒有裝置 `Unavailable`；逾時 `Error`／`Timeout`；格式錯誤 `Error`／`DataError` | Windows CI Skipped（沒有 NVIDIA GPU；只驗證找不到工具時為 `Unavailable`）；實機 Not Tested |
+| NVIDIA GPU | `nvidia-smi`（只找 `C:\Windows\System32`，再找 `%ProgramFiles%\NVIDIA Corporation\NVSMI`；不搜尋 PATH） | 一般使用者 | 找不到工具或沒有裝置 `Unavailable`；逾時 `Error`／`Timeout`；格式錯誤 `Error`／`DataError` | Windows CI Skipped（沒有 NVIDIA GPU；已驗證找不到工具時為 `Unavailable`）；實機 Not Tested |
 | AMD／Intel GPU | 不支援 | — | `Unavailable` | — |
-| 網路 | Win32 `GetIfTable2`（盤點 M7 確認） | 一般使用者 | 介面卡不存在 `Unavailable` | Not Tested |
+| 網路 | Win32 `GetIfTable2`（盤點 M7 確認） | 一般使用者 | 沒有符合的介面卡 `Unavailable`；指定的介面卡未連線或找不到 `Unavailable`；查詢失敗 `Error` | Windows CI：見 Phase 2-7 PR 結果（CI 唯一網卡為 Hyper-V，預設篩選下為 Unavailable；以 `includeNames = ["*"]` 驗證速度）；Wi-Fi、USB 網卡、VPN 實機 Not Tested |
 | 程序 | `Process.GetProcesses()` | 一般使用者；系統程序的啟動時間常無法讀取 | 略過該程序或欄位並計數，狀態仍 OK | Linux 開發環境 Passed（真實程序）；Windows CI Passed（Top 5） |
 | ACPI 熱區 | PDH `\Thermal Zone Information(*)\Temperature`（Kelvin） | 一般使用者 | 沒有熱區 `Unavailable` | Not Tested |
 
@@ -36,7 +36,8 @@
 - **CPU 核心溫度：** 需要驅動程式或管理員權限，不在範圍內。
 - **nvidia-smi：** 每次取樣啟動一個子程序（約數十到數百毫秒）；有逾時與結束機制。安裝在其他位置（例如只在 PATH 中）的 nvidia-smi 不會被使用。
 - **磁碟 I/O：** 延遲是計數器層級的平均服務時間；RAID、儲存空間（Storage Spaces）的實體磁碟名稱與數量可能和實際硬碟不同。
-- **虛擬介面卡：** 實體與虛擬介面卡同時納入時，合計流量可能重複計算。
+- **虛擬介面卡：** 實體與虛擬介面卡同時納入時，合計流量可能重複計算。篩選層介面一律不列入。
+- **雲端／虛擬機：** VM 的網卡（例如 Hyper-V Network Adapter）依關鍵字判斷為虛擬，預設不納入；需要時以 `includeNames` 指定。
 
 ## 3. 實機測試紀錄
 

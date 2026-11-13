@@ -99,4 +99,23 @@ public class SnapshotFormatterTests
 
         Assert.Contains("Gpu          Error        GPU 0 RTX 4060 35.0%, 2048 / 8192 MB, 61°C; GPU 1 Error", text, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Text_ShowsNetworkTotalsAndAdapters()
+    {
+        MonitorSnapshot snapshot = Snapshot with
+        {
+            Results =
+            [
+                new NetworkResult(MonitorStatus.OK, [
+                    new NetworkAdapterItem(MonitorStatus.OK, "Ethernet", "Intel", "{1}", true, 100, 200, 12.345, 1.5),
+                    new NetworkAdapterItem(MonitorStatus.Unavailable, "Wi-Fi", null, null, null, null, null, null, null),
+                ], 12.345, 1.5),
+            ],
+        };
+
+        string text = SnapshotFormatter.ToText(snapshot, Storage());
+
+        Assert.Contains("Network      OK           Total down 12.35 / up 1.50 Mbps (1 of 2 adapters); Ethernet down 12.35 / up 1.50 Mbps; Wi-Fi Unavailable", text, StringComparison.Ordinal);
+    }
 }

@@ -14,7 +14,7 @@
 | 4 | Unit Test | `dotnet test`（含覆蓋率） | 任何測試失敗 |
 | 5 | Build Check | `dotnet publish -r win-x64 --self-contained`（App、Cli） | 無法發行 |
 | 6 | Git Diff Check | `tools/diff-check.sh` | 空白錯誤、合併衝突標記、提交了 CSV／Log 或 Data／Logs 資料夾 |
-| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU 為 Error（OK 或 Unavailable 才通過）、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU 來源／GPU 來源／單次取樣完成 |
+| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU 或網路（預設篩選）為 Error（OK 或 Unavailable 才通過）、`includeNames = ["*"]` 時網路不是 OK 或沒有合計速度、NetworkMetrics CSV 缺該次 SampleId、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU／GPU／網路來源／單次取樣完成 |
 
 之後每加入一個資料來源，Smoke Test 就加上該模組的檢查。
 
@@ -144,5 +144,15 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：移植舊版 Pester GPU 案例（多張 GPU、名稱含逗號、不支援欄位留空、非數字、欄位不足、index 非整數、數值不合理、不受地區設定影響、單張異常、沒有輸出、固定參數與逾時、找不到工具不執行、逾時、非零結束碼、沒有裝置、無法啟動、恢復）、溫度、只在固定位置尋找、實際執行外部程序（輸出、結束碼、逾時結束、取消、找不到檔案）、文字輸出 | 同上 | Passed（287 個） |
 | Cli `--once` 端對端（GPU Unavailable、GpuMetrics 狀態列、啟動 Log 來源） | 同上 | Passed |
-| Smoke Test（GPU 為 OK 或 Unavailable、GpuMetrics CSV、Log 有 GPU 來源） | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test（GPU 為 OK 或 Unavailable、GpuMetrics CSV、Log 有 GPU 來源） | Windows CI | Passed（GPU Unavailable：找不到 nvidia-smi；外部程序逾時與取消測試 Passed） |
 | 真實 NVIDIA GPU（數值、溫度、多張 GPU、驅動程式重啟、逾時） | 實機 | Skipped（CI 沒有 GPU）；Not Tested |
+
+### Phase 2-7（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：移植舊版 Pester 網路案例（預設只納入連線中實體介面卡、虛擬關鍵字、physicalOnlyByDefault、includeNames 萬用字元與大小寫、excludeNames 優先、第一次不顯示 0、Mbps 計算、真正的 0、計數器變小、識別改變、1.1 倍尖峰、無連線速度、經過時間為 0、合計只含 OK、無符合介面卡、指定介面卡未連線／找不到、重新連線、暖機、查詢失敗保留基準、停用）、篩選層與回送介面一律排除、MIB_IF_ROW2 結構大小與欄位位移、啟動 Log 篩選結果、文字輸出 | 同上 | Passed（320 個） |
+| Cli `--once` 端對端（Network Unavailable、NetworkMetrics 狀態列、啟動 Log） | 同上 | Passed |
+| Smoke Test（預設篩選不為 Error；`includeNames = ["*"]` 時 OK 且有合計、NetworkMetrics CSV） | Windows CI | 見 PR 的 CI 結果 |
+| Wi-Fi、USB 網卡、VPN、斷線重連、與工作管理員比對 | 實機 | Not Tested |
