@@ -60,7 +60,7 @@ public class SessionAndStartupLogTests
         var settings = new AppSettings { Gpu = new ModuleSettings { Enabled = false }, Thresholds = new ThresholdSettings { DiskFreeGB = 5, DiskRecoveryFreeGB = 6 } };
         var result = new SettingsLoadResult(settings, @"C:\x\settings.json", [], ["未知欄位 'foo'，已忽略（請檢查拼字）。"], ["timeouts"]);
 
-        StartupLog.Write(_log, new StartupInfo("1.2.3", result, @"C:\data", @"C:\logs"));
+        StartupLog.Write(_log, new StartupInfo("1.2.3", result, @"C:\data", @"C:\logs", ["CPU 來源：PDH x"]));
 
         string[] lines = [.. _log.Entries.Select(e => e.Message)];
         Assert.Equal("Windows Performance Monitor 1.2.3 啟動", lines[0]);
@@ -72,6 +72,7 @@ public class SessionAndStartupLogTests
         Assert.Contains(lines, l => l.Contains("可用 ≤ 5 GB（恢復 ≥ 6 GB），條件 Any", StringComparison.Ordinal));
         Assert.Contains(@"CSV 目錄：C:\data", lines);
         Assert.Contains(@"Log 目錄：C:\logs", lines);
+        Assert.Equal("CPU 來源：PDH x", lines[^1]);
         Assert.Equal(LogSeverity.Warn, _log.Entries.Single(e => e.Message.StartsWith("未知欄位", StringComparison.Ordinal)).Severity);
     }
 
@@ -86,5 +87,18 @@ public class SessionAndStartupLogTests
         Assert.Equal(3, _storage.LostRows);
         Assert.Equal(4, _storage.WrittenRows);
         Assert.Null(_storage.LastError);
+    }
+
+    [Fact]
+    public async Task RunOnceWritesStartAndCompletionLogsAndReturnsSnapshot()
+    {
+        _storage.AddWritten(1);
+
+        MonitorSnapshot snapshot = await Session(new RecordingRecorder()).RunOnceAsync(CancellationToken.None);
+
+        Assert.Same(_store.Latest, snapshot);
+        string[] app = [.. _log.Messages(LogChannel.Application)];
+        Assert.Equal("單次取樣開始", app[0]);
+        Assert.Equal("單次取樣完成；本次 CSV 寫入 1 列、遺失 0 列。", app[^1]);
     }
 }

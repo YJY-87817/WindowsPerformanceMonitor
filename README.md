@@ -2,7 +2,7 @@
 
 Windows 個人電腦效能監控工具 V2.0：以 C# + .NET 10 + WPF 重寫舊版 PowerShell 工具。
 
-> 目前狀態：**Phase 0**（架構、Solution 骨架與 CI）。尚未提供監控功能；主控台程式只提供 `--self-check`。
+> 目前狀態：**Phase 2**（Windows 資料來源）。已提供 CPU；其他資料來源依序加入中。WPF 介面於 Phase 3 提供。
 
 舊版（PowerShell V1.0）與需求來源：[Windows_PC_Performance_Monitor_Specification](https://github.com/YJY-87817/Windows_PC_Performance_Monitor_Specification)（規格書 v1.5、開發規劃 v2.1）。
 
@@ -49,11 +49,25 @@ dotnet test -c Release
 dotnet format --verify-no-changes
 ```
 
-執行主控台自我檢查：
+主控台程式（Windows）：取樣一次，寫入 CSV 與 Log 後結束：
+
+```bash
+dotnet run --project src/PerformanceMonitor.Cli -- --once
+```
+
+以 JSON 輸出完整結果（供腳本使用）：
+
+```bash
+dotnet run --project src/PerformanceMonitor.Cli -- --once --json
+```
+
+與硬體無關的自我檢查：
 
 ```bash
 dotnet run --project src/PerformanceMonitor.Cli -- --self-check
 ```
+
+設定檔：`%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`（不存在時使用內建預設值；範例見 [docs/settings.example.json](docs/settings.example.json)）。
 
 WPF 程式只能在 Windows 執行：
 

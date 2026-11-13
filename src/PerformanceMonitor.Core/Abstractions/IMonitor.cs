@@ -14,6 +14,9 @@ public interface IMonitor
     /// <summary>是否啟用（來自設定）。停用時不呼叫取樣，結果為 <c>Disabled</c>。</summary>
     bool IsEnabled { get; }
 
+    /// <summary>資料來源說明，寫入啟動 Log；沒有時為 null。</summary>
+    string? SourceDescription => null;
+
     /// <summary>建立速率型數值的基準（例如計數器第一次讀取）。預設不做事。</summary>
     Task WarmUpAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 

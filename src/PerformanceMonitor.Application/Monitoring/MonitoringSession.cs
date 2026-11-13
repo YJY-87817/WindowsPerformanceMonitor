@@ -21,7 +21,21 @@ public sealed class MonitoringSession(
     private const string Source = "Monitor";
 
     /// <summary>執行到取消為止。</summary>
-    public async Task RunAsync(CancellationToken cancellationToken)
+    public Task RunAsync(CancellationToken cancellationToken) =>
+        RunCoreAsync(
+            "監控開始",
+            async () =>
+            {
+                await engine.RunAsync(cancellationToken).ConfigureAwait(false);
+                return null;
+            },
+            "監控正常停止");
+
+    /// <summary>單次取樣（主控台 <c>--once</c>），回傳快照。</summary>
+    public async Task<MonitorSnapshot> RunOnceAsync(CancellationToken cancellationToken) =>
+        (await RunCoreAsync("單次取樣開始", async () => await engine.RunOnceAsync(cancellationToken).ConfigureAwait(false), "單次取樣完成").ConfigureAwait(false))!;
+
+    private async Task<MonitorSnapshot?> RunCoreAsync(string startMessage, Func<Task<MonitorSnapshot?>> run, string stopMessage)
     {
         void OnSnapshot(object? sender, MonitorSnapshot snapshot)
         {
@@ -30,11 +44,12 @@ public sealed class MonitoringSession(
         }
 
         store.SnapshotPublished += OnSnapshot;
-        log.Info(Source, "監控開始");
+        log.Info(Source, startMessage);
         try
         {
-            await engine.RunAsync(cancellationToken).ConfigureAwait(false);
-            log.Info(Source, $"監控正常停止；本次 CSV 寫入 {storage.WrittenRows} 列、遺失 {storage.LostRows} 列。");
+            MonitorSnapshot? snapshot = await run().ConfigureAwait(false);
+            log.Info(Source, $"{stopMessage}；本次 CSV 寫入 {storage.WrittenRows} 列、遺失 {storage.LostRows} 列。");
+            return snapshot;
         }
         catch (Exception ex)
         {

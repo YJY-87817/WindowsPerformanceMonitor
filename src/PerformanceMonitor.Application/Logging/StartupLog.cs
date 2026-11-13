@@ -10,11 +10,12 @@ namespace PerformanceMonitor.Application.Logging;
 /// <param name="Settings">設定讀取結果。</param>
 /// <param name="DataDirectory">CSV 目錄完整路徑。</param>
 /// <param name="LogDirectory">Log 目錄完整路徑。</param>
-public sealed record StartupInfo(string Version, SettingsLoadResult Settings, string DataDirectory, string LogDirectory);
+/// <param name="Sources">各資料來源說明（例如 CPU 來源、網路篩選結果）。</param>
+public sealed record StartupInfo(string Version, SettingsLoadResult Settings, string DataDirectory, string LogDirectory, IReadOnlyList<string> Sources);
 
 /// <summary>
 /// 啟動 Log（舊規格 v1.5 §5.6）：版本、設定來源與警告、週期、模組啟用狀態、告警門檻、CSV／Log 目錄。
-/// CPU 來源與網路介面卡篩選結果由各資料來源於 Phase 2 補寫。
+/// 以及各資料來源說明（CPU 來源、網路介面卡篩選結果等）。
 /// </summary>
 public static class StartupLog
 {
@@ -50,6 +51,10 @@ public static class StartupLog
 
         log.Info(Source, s.Logging.Enabled ? $"CSV 目錄：{info.DataDirectory}" : "CSV：停用（logging.enabled = false）");
         log.Info(Source, $"Log 目錄：{info.LogDirectory}");
+        foreach (string source in info.Sources)
+        {
+            log.Info(Source, source);
+        }
     }
 
     private static (string Name, bool Enabled)[] Modules(AppSettings s) =>

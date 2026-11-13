@@ -12,6 +12,7 @@
 | 版本 | 日期 | 狀態 | 內容 |
 |---|---|---|---|
 | 2.0 初稿 | 2026-11-13 | 初稿 | 建立文件：範圍、共通規格、資料、告警、平台；依 Phase 0 盤點結果整理 |
+| 2.0 初稿 | 2026-11-13 | Phase 2-1 | 盤點 M2、M7、C8、S4 確認；§4.1 CPU；§8 Cli `--once`、`--json` |
 | 2.0 初稿 | 2026-11-13 | Phase 1c | §6 補上告警實作規則 |
 | 2.0 初稿 | 2026-11-13 | Phase 1b | §5 補上 CSV 寫入與 Log 的實作規則；Data-Schema 定為 v1 |
 | 2.0 初稿 | 2026-11-13 | Phase 1a | 盤點建議全部確認；新增 §3.3 取樣流程、§7 設定檔欄位與驗證規則；本機時間欄位只在 SystemMetrics；資料目錄寫不進去時不開始監控 |
@@ -101,6 +102,18 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 程序 | RAM Top N（預設 5，範圍 1～20） | v1.5 §3.7 |
 | ACPI 熱區 | 每個熱區溫度（°C） | 新增 |
 
+### 4.1 CPU（Phase 2-1）
+
+| 項目 | 規格 |
+|---|---|
+| 來源 | PDH `\Processor(_Total)\% Processor Time`，以 `PdhAddEnglishCounter` 加入（不受 Windows 語系影響） |
+| 暖機 | 啟動時收集一次建立基準；第一次讀取若尚無基準回報 `WarmingUp` |
+| 有效值 | 0～100；超出範圍或非數字為 `Error`／`DataError` |
+| 失敗 | 讀取失敗為 `Error`／`DataError`（附 PDH 錯誤碼）；PDH 呼叫失敗為 `Error`／`TransientError`，下次取樣重新建立查詢並重新暖機 |
+| 無 PDH | 無法載入 pdh.dll（非 Windows）為 `Unavailable` |
+| 備援 | 不提供 WMI 備援（盤點 M2） |
+| 啟動 Log | 記錄 CPU 來源 |
+
 ## 5. 資料與 Log
 
 見 [Data-Schema](Data-Schema.md) 與 [決策 0005](decisions/0005-data-storage.md)。重點：
@@ -175,7 +188,7 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 ### 7.3 與舊版的差異
 
 - 移除（新版固定行為）：`disk.driveType`、`gpu.provider`、`logging.fileRotation`、`logging.encoding`。
-- 暫不提供，Phase 2 確認後再決定：`cpu.counterPath`、`cpu.useCimFallback`、`timeouts.cimSeconds`。舊設定檔裡的這些欄位會被當成未知欄位，只警告不報錯。
+- 不提供（Phase 2 確認不使用 WMI，計數器路徑固定）：`cpu.counterPath`、`cpu.useCimFallback`、`timeouts.cimSeconds`。舊設定檔裡的這些欄位會被當成未知欄位，只警告不報錯。
 - 新增：`diskIo.enabled`、`temperature.enabled`。
 - 時間設定一律為整數秒。
 
@@ -184,7 +197,7 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 介面 | 說明 | Phase |
 |---|---|---|
 | WPF | 總覽、即時監控、磁碟、網路、溫度、程序、設定、狀態／錯誤 | 3 |
-| Cli | `--self-check`、`--version`、`--help`；`--once` | 0；2 |
+| Cli | `--self-check`、`--version`、`--help`；`--once` 取樣一次並寫 CSV／Log（行為與連續模式相同）；`--once --json` 以 JSON 輸出完整結果（取代舊版 `-PassThru`） | 0；2-1 |
 
 ## 9. 非功能需求
 
@@ -206,8 +219,4 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 
 | # | 事項 | 建議 | 何時確認 |
 |---|---|---|---|
-| 1 | CPU 的 CIM 備援是否移植（盤點 M2） | 不移植 | Phase 2 |
-| 2 | 網路資料來源（盤點 M7） | Win32 `GetIfTable2` | Phase 2 |
-| 3 | CIM 逾時設定（盤點 C8） | 若不用 WMI 則移除 | Phase 2 |
-| 5 | Cli JSON 輸出（盤點 S4） | `--once --json` | Phase 2 |
 | 7 | 程式碼簽章、ARM64 | Phase 5 評估 | Phase 5 |

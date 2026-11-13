@@ -11,12 +11,12 @@
 | # | 舊版功能 | v1.5 | 舊版做法 | 建議處置 | C# 做法 | Phase |
 |---|---|---|---|---|---|---|
 | M1 | CPU 使用率 | §3.2 | PDH 計數器（索引查詢在地化名稱）＋ CIM 備援 | 改善 | `PdhAddEnglishCounter` 加入 `\Processor(_Total)\% Processor Time`，不受語系影響 | 2 |
-| M2 | CPU 的 CIM 備援（`Win32_Processor.LoadPercentage`） | §3.2.1 | 計數器失敗時改用 CIM | **待確認** | 建議不移植：改用英文計數器後，語系不再是失敗原因；少一個 `System.Management` 依賴。失敗時回報 `Error` | 2 |
+| M2 | CPU 的 CIM 備援（`Win32_Processor.LoadPercentage`） | §3.2.1 | 計數器失敗時改用 CIM | 不再需要（已確認） | 改用英文計數器後，語系不再是失敗原因；少一個 `System.Management` 依賴。失敗時回報 `Error` | 2 |
 | M3 | 記憶體（總量、已用、可用、使用率） | §3.3 | CIM `Win32_OperatingSystem` | 改善 | Win32 `GlobalMemoryStatusEx`（不需 WMI） | 2 |
 | M4 | 磁碟容量（固定磁碟） | §3.4 | CIM `Win32_LogicalDisk`（DriveType 3） | 改善 | `System.IO.DriveInfo`（`DriveType.Fixed`） | 2 |
 | M5 | 磁碟 I/O | — | 舊版無 | 新增（已確認） | PDH `\LogicalDisk(*)\…`；見 v2.1 §6.2.2 | 2 |
 | M6 | NVIDIA GPU 使用率、顯存 | §3.5 | `nvidia-smi`，逾時 Kill | 保留＋新增溫度（已確認） | `Process` 執行 `nvidia-smi`，一次查詢含 `temperature.gpu`；尋找順序、解析規則沿用 v1.4 決策 | 2 |
-| M7 | 網路介面卡流量 | §3.6 | CIM `MSFT_NetAdapter*` | 保留（已確認）；做法**待確認** | 選項：(a) `System.Net.NetworkInformation`（內建，但缺「是否硬體介面卡」旗標，只能靠名稱關鍵字判斷）；(b) Win32 `GetIfTable2`（有硬體旗標與連線速度，需 P/Invoke）。建議 (b)，篩選結果較接近舊版 | 2 |
+| M7 | 網路介面卡流量 | §3.6 | CIM `MSFT_NetAdapter*` | 保留，改用 Win32 `GetIfTable2`（已確認） | 有「是否硬體介面卡」旗標與連線速度，篩選結果最接近舊版 | 2 |
 | M8 | 網路篩選規則、合計、速度尖峰 1.1 倍檢查 | §3.6.1 | 見 v1.4 決策 | 保留 | 規則移植為純函式並沿用舊版測試案例 | 2 |
 | M9 | 程序 RAM Top N | §3.7 | `Get-Process`，WorkingSet64 | 保留 | `Process.GetProcesses()`；讀取失敗略過並計數 | 2 |
 | M10 | ACPI 熱區溫度 | — | 舊版無 | 新增（已確認） | PDH `\Thermal Zone Information(*)\Temperature`（K → °C） | 2 |
@@ -32,7 +32,7 @@
 | C5 | 啟動暖機 1 秒（CPU、網路），第一個畫面就有數值 | §3.6 | 保留 | 磁碟 I/O、熱區也一起暖機 | 2 |
 | C6 | 模組失敗隔離、有限重試 | §10.2、§10.3 | 保留 | | 1 |
 | C7 | 停止時補寫最後一筆完整快照、釋放資源、寫停止 Log | §4.4 | 保留 | 觸發方式改為 WPF 停止／關閉視窗、Cli Ctrl+C | 1 |
-| C8 | CIM 查詢逾時（`timeouts.cimSeconds`） | §3.1 | **待確認** | 若 M2、M7 都不用 WMI，此設定不再需要 | 2 |
+| C8 | CIM 查詢逾時（`timeouts.cimSeconds`） | §3.1 | 不再需要（已確認） | M2、M7 都不用 WMI，不提供此設定 | 2 |
 
 ## 3. 告警
 
@@ -66,8 +66,8 @@
 |---|---|---|---|---|---|
 | S1 | JSON 設定檔與完整驗證 | §9 | 保留（已確認：沿用舊版並精簡） | 位置 `%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`；WPF 設定頁讀寫同一檔。欄位見規格 v2.0 §7 | 1／3 |
 | S2 | 命令列即時畫面 | §4.1 | 不再需要 | 由 WPF 取代；Cli 只提供診斷命令 | — |
-| S3 | `-Once` | §5.2 | 改善 | Cli `--once` | 2 |
-| S4 | `-PassThru`（輸出物件供腳本使用） | — | **待確認** | 建議 Cli `--once --json` 輸出 JSON | 2 |
+| S3 | `-Once` | §5.2 | 改善（已完成） | Cli `--once`，行為與連續模式相同（寫 CSV 與 Log） | 2 |
+| S4 | `-PassThru`（輸出物件供腳本使用） | — | 改善（已確認、已完成） | Cli `--once --json` 輸出 JSON | 2 |
 | S5 | `-Verbose` 診斷輸出 | — | 改善 | 改用 Logging 等級設定 | 1 |
 | S6 | 24 小時穩定性工具 `Test-Stability.ps1` | §7.2 | 改善 | Phase 5 提供 C# 版或以 Cli 搭配外部量測 | 5 |
 | S7 | 隱私：不上傳、不記錄機密、只執行 nvidia-smi | §7.4 | 保留 | | 全部 |
@@ -76,7 +76,3 @@
 
 | # | 事項 | 建議 | 何時確認 |
 |---|---|---|---|
-| M2 | CPU 的 CIM 備援是否移植 | 不移植 | Phase 2 CPU 開工前 |
-| M7 | 網路資料來源 | Win32 `GetIfTable2` | Phase 2 網路開工前 |
-| C8 | CIM 逾時設定 | 若不用 WMI 則移除 | Phase 2 |
-| S4 | JSON 輸出 | Cli `--once --json` | Phase 2 |

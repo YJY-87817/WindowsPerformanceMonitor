@@ -70,6 +70,22 @@ public sealed class MonitoringEngine(
         }
     }
 
+    /// <summary>
+    /// 單次取樣（主控台 <c>--once</c>）：暖機 → 取樣一次 → 發布 → 寫入 CSV（含程序紀錄，若啟用），與連續模式行為一致。
+    /// </summary>
+    public async Task<MonitorSnapshot> RunOnceAsync(CancellationToken cancellationToken)
+    {
+        await WarmUpAsync(cancellationToken).ConfigureAwait(false);
+        MonitorSnapshot snapshot = await runner.RunAsync(TimeSpan.FromSeconds(settings.Monitor.SampleSeconds), cancellationToken).ConfigureAwait(false);
+        store.Publish(snapshot);
+        if (settings.Logging.Enabled)
+        {
+            await recorder.RecordAsync(snapshot, settings.Process.LoggingEnabled, cancellationToken).ConfigureAwait(false);
+        }
+
+        return snapshot;
+    }
+
     private async Task WarmUpAsync(CancellationToken cancellationToken)
     {
         foreach (IMonitor monitor in runner.Monitors.Where(m => m.IsEnabled))
