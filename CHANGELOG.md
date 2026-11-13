@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Phase 1b（2026-11-13）：CSV 與 Log
+
+- **資料格式 v1 定稿**：7 種 CSV（SystemMetrics、DiskMetrics、DiskIoMetrics、GpuMetrics、NetworkMetrics、ProcessMetrics、TemperatureMetrics）。
+- 新增各模組結果型別（資料契約），供 Phase 2 資料來源填入。
+- 新增 CSV 寫入：UTF-8 BOM、CRLF、Invariant Culture、小數最多 3 位、空值不寫 0、狀態列；檔名含 schema 版本與本機日期；檔案被鎖定時 200 ms 重試，仍失敗累計遺失列數並寫 Error Log。
+- 新增專用 Log 服務：Application／Error Log 每日分檔；Error Log 去重與 10 分鐘彙總、恢復紀錄；LoopOverrun 紀錄；啟動與停止 Log。
+- 新增啟動前目錄可寫入檢查。
+
 ### Phase 1a（2026-11-13）：資料模型、設定、排程
 
 - 新增資料模型：`SampleId`、`ModuleResult`、`MonitorSnapshot`；多裝置整體狀態規則 `StatusAggregator`；錯誤訊息整理（第一行、最長 200 字）。

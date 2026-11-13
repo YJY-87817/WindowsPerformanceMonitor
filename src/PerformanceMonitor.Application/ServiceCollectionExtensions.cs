@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using PerformanceMonitor.Application.Logging;
 using PerformanceMonitor.Application.Monitoring;
 using PerformanceMonitor.Application.Services;
 using PerformanceMonitor.Core.Abstractions;
@@ -19,8 +20,13 @@ public static class ServiceCollectionExtensions
         services.AddTransient<SelfCheckService>();
         services.AddSingleton<SampleRunner>();
         services.AddSingleton<MonitoringEngine>();
+        services.AddSingleton<MonitoringSession>();
         services.AddSingleton<SnapshotStore>();
         services.AddSingleton<ISnapshotProvider>(sp => sp.GetRequiredService<SnapshotStore>());
+        services.AddSingleton<StorageStatus>();
+        services.AddSingleton<IStorageStatus>(sp => sp.GetRequiredService<StorageStatus>());
+        services.AddSingleton<StatusLogTracker>();
+        services.AddSingleton<MonitoringLogObserver>();
         services.TryAddSingleton<ISnapshotRecorder, NullSnapshotRecorder>();
         return services;
     }

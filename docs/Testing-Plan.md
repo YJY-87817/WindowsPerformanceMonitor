@@ -74,3 +74,12 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：模型與狀態規則、設定解析與驗證、設定範例、排程格點、取樣隔離、主迴圈（以假時間驗證格點、CSV／程序紀錄時點、略過不補跑、停止補寫） | 同上 | Passed（97 個） |
 | 以上 | Windows CI | 見 PR 的 CI 結果 |
+
+### Phase 1b（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：CSV 格式、7 種 CSV 欄位與狀態列、實際寫檔（BOM、標題列只寫一次、本機日期檔名、跨午夜）、檔案鎖定重試與遺失計數、Log 格式與失敗計數、Error Log 去重與 10 分鐘彙總、LoopOverrun 彙總、啟動／停止 Log、目錄可寫入檢查 | 同上 | Passed（151 個） |
+| 以上 | Windows CI | 見 PR 的 CI 結果 |
+| Excel 開啟 CSV 時的鎖定行為 | Windows 實機 | Not Tested（以 FileShare.None 模擬已測） |

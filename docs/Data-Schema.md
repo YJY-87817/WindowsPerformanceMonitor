@@ -1,6 +1,6 @@
 # 資料格式（schema v1 初稿）
 
-- 版本：v1 草案（2026-11-13 負責人確認第 5 節的差異）；Phase 1b 實作 CSV 寫入時定稿，Phase 2 依各資料來源補齊
+- 版本：**v1**（2026-11-13，Phase 1b 實作）。欄位已由程式 `CsvTables` 實作並以測試固定；之後欄位有任何改變都必須將該檔版本 +1
 - 相關決策：[0005 資料目錄、檔案命名與 schema 版本](decisions/0005-data-storage.md)
 
 ## 1. 檔案
@@ -37,7 +37,7 @@ Logs/
 | 空值 | 無法取得的數值寫空欄位，以 `Status` 說明；不得寫 0 |
 | 文字 | 依 CSV 規則跳脫逗號、雙引號、換行 |
 | 關聯 | 同一次取樣的所有資料使用相同 `SampleId`（32 位十六進位） |
-| 狀態列 | 分項檔（磁碟、GPU、網路、程序、溫度）該次沒有任何項目時，寫一筆只有 `SampleId`、`TimestampUtc`、`Status` 的列 |
+| 狀態列 | 分項檔（磁碟、磁碟 I/O、GPU、網路、程序、溫度）的模組有結果但沒有任何項目時（例如 `Unavailable`、`Disabled`），寫一筆只有 `SampleId`、`TimestampUtc`、`Status`、`ErrorCode`（若該檔有此欄）的列，其他欄位留空；快照中沒有該模組時不寫 |
 | 狀態值 | `OK`、`WarmingUp`、`Unavailable`、`Error`、`Disabled` |
 | ErrorCode | `Unavailable`、`ConfigurationError`、`Timeout`、`DataError`、`AccessDenied`、`IOError`、`TransientError`、`InternalError` |
 
@@ -93,7 +93,7 @@ Logs/
 
 `SampleId`、`TimestampUtc`、`GpuIndex`、`GpuName`、`UsagePercent`、`MemoryUsedMB`、`MemoryTotalMB`、`Status`、`ErrorCode`
 
-GPU 溫度寫在 TemperatureMetrics（`SensorType = Gpu`）。
+GPU 溫度寫在 TemperatureMetrics（`SensorType = Gpu`，`SensorName` 為「GPU 〈index〉 〈名稱〉」，狀態取該 GPU 的狀態）。
 
 ### 3.5 NetworkMetrics_v1（每張納入合計的介面卡一筆）
 
@@ -102,6 +102,8 @@ GPU 溫度寫在 TemperatureMetrics（`SensorType = Gpu`）。
 ### 3.6 ProcessMetrics_v1（每個 Top N 程序一筆）
 
 `SampleId`、`TimestampUtc`、`Rank`、`ProcessName`、`Pid`、`WorkingSetMB`、`StartTimeUtc`、`Status`
+
+只在程序紀錄到期時寫入（見規格 v2.0 §3.3）。`Status` 為程序模組狀態；部分程序讀取失敗仍為 `OK`。
 
 ### 3.7 TemperatureMetrics_v1（每個感測器一筆）
 
