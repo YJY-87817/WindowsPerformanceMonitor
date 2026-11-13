@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Phase 2-5（2026-11-13）：磁碟 I/O
+
+- 新增磁碟 I/O 監控：PDH 萬用字元計數器 `\LogicalDisk(*)`、`\PhysicalDisk(*)`（英文名稱加入）；讀寫 MB/s、IOPS、延遲、忙碌率；邏輯磁碟與磁碟容量模組相同，另列實體磁碟；暖機、單一磁碟異常不影響其他磁碟。
+- **資料格式（發行前直接修改 v1）**：DiskIoMetrics 的 `Drive` 改為 `Scope`（Logical／Physical）＋`Disk`。schema 版本 +1 規則自第一次發行起適用。
+- PDH 封裝加入萬用字元計數器讀取。
+- 主控台文字輸出加入磁碟 I/O；Smoke Test 檢查磁碟 I/O 與 DiskIoMetrics CSV。
+
 ### Phase 2-4（2026-11-13）：程序
 
 - 新增程序 RAM Top N：依 Working Set 排序取前 `process.topCount` 名；略過已結束或無法讀取的程序並計數；啟動時間只讀前 N 名，無權讀取時留空並計數。

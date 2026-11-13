@@ -19,7 +19,7 @@ public class CsvTablesTests
         new CpuResult(MonitorStatus.OK, 25.55555),
         new MemoryResult(MonitorStatus.OK, 16, 10.4321, 5.5679, 65.2),
         new DiskResult(MonitorStatus.OK, [new DiskItem(MonitorStatus.OK, "C:", "System", 500, 300, 200, 60, 40)]),
-        new DiskIoResult(MonitorStatus.WarmingUp, [new DiskIoItem(MonitorStatus.WarmingUp, "C:", null, null, null, null, null, null, null)]),
+        new DiskIoResult(MonitorStatus.WarmingUp, [new DiskIoItem(MonitorStatus.WarmingUp, DiskIoScope.Logical, "C:", null, null, null, null, null, null, null)]),
         new GpuResult(MonitorStatus.OK, [new GpuItem(MonitorStatus.OK, 0, "RTX 4060", 35, 2048, 8192, 61)]),
         new NetworkResult(MonitorStatus.OK, [new NetworkAdapterItem(MonitorStatus.OK, "Ethernet", "Intel(R) Ethernet", "{guid}", true, 1000, 2000, 12.5, 2.3)], 12.5, 2.3),
         new ProcessResult(MonitorStatus.OK, [new ProcessItem(1, "chrome", 1234, 1200.55, Utc.AddHours(-1)), new ProcessItem(2, "Code", 5678, 850.2, null)], 0, 1),
@@ -76,6 +76,31 @@ public class CsvTablesTests
         string[] row = Assert.Single(Rows(CsvTables.DiskMetrics, Snapshot(disk)));
 
         Assert.Equal(["0123456789abcdef0123456789abcdef", "2026-11-13T16:30:00.000Z", "D:", "", "", "", "", "", "", "Error", "DataError"], row);
+    }
+
+    [Fact]
+    public void DiskIoRowsIncludeScope()
+    {
+        var io = new DiskIoResult(MonitorStatus.OK, [
+            new DiskIoItem(MonitorStatus.OK, DiskIoScope.Logical, "C:", 12.3456, 1.5, 100, 20, 0.8, 1.25, 37.5),
+            new DiskIoItem(MonitorStatus.WarmingUp, DiskIoScope.Physical, "0 C: D:", null, null, null, null, null, null, null),
+        ]);
+
+        string[][] rows = Rows(CsvTables.DiskIoMetrics, Snapshot(io));
+
+        Assert.Equal(
+            ["SampleId", "TimestampUtc", "Scope", "Disk", "ReadMBps", "WriteMBps", "ReadIOPS", "WriteIOPS", "ReadLatencyMs", "WriteLatencyMs", "BusyPercent", "Status", "ErrorCode"],
+            CsvTables.DiskIoMetrics.Columns);
+        Assert.Equal(["0123456789abcdef0123456789abcdef", "2026-11-13T16:30:00.000Z", "Logical", "C:", "12.346", "1.5", "100", "20", "0.8", "1.25", "37.5", "OK", ""], rows[0]);
+        Assert.Equal(["0123456789abcdef0123456789abcdef", "2026-11-13T16:30:00.000Z", "Physical", "0 C: D:", "", "", "", "", "", "", "", "WarmingUp", ""], rows[1]);
+    }
+
+    [Fact]
+    public void DiskIoStatusRowHasAllColumns()
+    {
+        string[] row = Assert.Single(Rows(CsvTables.DiskIoMetrics, Snapshot(ModuleResult.Unavailable(ModuleNames.DiskIo, "x"))));
+
+        Assert.Equal(CsvTables.DiskIoMetrics.Columns.Count, row.Length);
     }
 
     [Fact]

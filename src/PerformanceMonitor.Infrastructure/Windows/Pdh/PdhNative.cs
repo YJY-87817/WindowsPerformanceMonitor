@@ -18,6 +18,9 @@ internal static partial class PdhNative
     /// <summary>計數器狀態：資料無效（例如速率型計數器只有一次取樣）。</summary>
     public const uint StatusInvalidData = 0xC0000BBA;
 
+    /// <summary>回傳值：緩衝區不足（陣列讀取需再呼叫一次）。</summary>
+    public const uint MoreData = 0x800007D2;
+
     /// <summary>回傳值：資料無效。</summary>
     public const uint InvalidData = 0xC0000BC6;
 
@@ -45,6 +48,9 @@ internal static partial class PdhNative
     [LibraryImport("pdh.dll")]
     internal static partial uint PdhGetFormattedCounterValue(nint counter, uint format, out uint type, out FormattedValue value);
 
+    [LibraryImport("pdh.dll", EntryPoint = "PdhGetFormattedCounterArrayW")]
+    internal static partial uint PdhGetFormattedCounterArray(nint counter, uint format, ref uint bufferSize, out uint itemCount, nint itemBuffer);
+
     [LibraryImport("pdh.dll")]
     internal static partial uint PdhCloseQuery(nint query);
 
@@ -57,6 +63,14 @@ internal static partial class PdhNative
 
         [FieldOffset(8)]
         public double DoubleValue;
+    }
+
+    /// <summary>PDH_FMT_COUNTERVALUE_ITEM_W：執行個體名稱與格式化數值。</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct FormattedItem
+    {
+        public nint Name;
+        public FormattedValue Value;
     }
 }
 

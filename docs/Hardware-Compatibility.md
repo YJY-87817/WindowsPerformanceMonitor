@@ -22,11 +22,11 @@
 | CPU 使用率 | PDH `\Processor(_Total)\% Processor Time`（英文名稱加入） | 一般使用者 | 第一次 `WarmingUp`；讀取失敗 `Error`；無 pdh.dll `Unavailable` | Windows CI（Windows Server，英文）Passed；Windows 11／10、繁體中文 Not Tested |
 | 記憶體 | Win32 `GlobalMemoryStatusEx` | 一般使用者 | 資料不合理 `Error`（DataError）；API 失敗 `Error`（TransientError） | Windows CI Passed；Windows 11／10 Not Tested |
 | 磁碟容量 | `System.IO.DriveInfo`（固定磁碟） | 一般使用者 | 該磁碟 `Error`；沒有固定磁碟 `Unavailable` | Windows CI Passed（C:、D:）；USB 固定磁碟、BitLocker 鎖定磁碟 Not Tested |
-| 磁碟 I/O | PDH `\LogicalDisk(*)\…` | 一般使用者 | 第一次 `WarmingUp`；磁碟消失 `Unavailable` | Not Tested |
+| 磁碟 I/O | PDH `\LogicalDisk(*)\…`、`\PhysicalDisk(*)\…`（萬用字元，英文名稱加入） | 一般使用者 | 第一次 `WarmingUp`；固定磁碟沒有計數器資料 `Unavailable`；讀取失敗 `Error`；無 pdh.dll `Unavailable` | Windows CI：見 Phase 2-5 PR 結果；繁體中文、USB 插拔、RAID／儲存空間 Not Tested |
 | NVIDIA GPU | `nvidia-smi`（PATH，或 `%ProgramFiles%\NVIDIA Corporation\NVSMI`） | 一般使用者 | 找不到工具 `Unavailable`；逾時或格式錯誤 `Error` | Not Tested |
 | AMD／Intel GPU | 不支援 | — | `Unavailable` | — |
 | 網路 | Win32 `GetIfTable2`（盤點 M7 確認） | 一般使用者 | 介面卡不存在 `Unavailable` | Not Tested |
-| 程序 | `Process.GetProcesses()` | 一般使用者；系統程序的啟動時間常無法讀取 | 略過該程序或欄位並計數，狀態仍 OK | Linux 開發環境 Passed（真實程序）；Windows CI：見 Phase 2-4 PR 結果 |
+| 程序 | `Process.GetProcesses()` | 一般使用者；系統程序的啟動時間常無法讀取 | 略過該程序或欄位並計數，狀態仍 OK | Linux 開發環境 Passed（真實程序）；Windows CI Passed（Top 5） |
 | ACPI 熱區 | PDH `\Thermal Zone Information(*)\Temperature`（Kelvin） | 一般使用者 | 沒有熱區 `Unavailable` | Not Tested |
 
 ### 2.1 已知限制
@@ -35,6 +35,7 @@
 - **WMI `MSAcpi_ThermalZoneTemperature`：** 需要系統管理員權限，不使用。
 - **CPU 核心溫度：** 需要驅動程式或管理員權限，不在範圍內。
 - **nvidia-smi：** 每次取樣啟動一個子程序；有逾時與結束機制。
+- **磁碟 I/O：** 延遲是計數器層級的平均服務時間；RAID、儲存空間（Storage Spaces）的實體磁碟名稱與數量可能和實際硬碟不同。
 - **虛擬介面卡：** 實體與虛擬介面卡同時納入時，合計流量可能重複計算。
 
 ## 3. 實機測試紀錄
