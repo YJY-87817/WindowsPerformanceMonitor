@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ViewModel 與畫面文字（不引用 WPF、Infrastructure）：任何平台都可建置與測試。
+    App 專案只放 XAML 畫面與 DI 組裝（Phase 3 確認）。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PerformanceMonitor.Core\PerformanceMonitor.Core.csproj" />
+    <ProjectReference Include="..\PerformanceMonitor.Application\PerformanceMonitor.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+
+</Project>

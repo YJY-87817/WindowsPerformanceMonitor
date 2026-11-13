@@ -17,6 +17,7 @@
 |---|---|---|---|---|
 | Microsoft.Extensions.Hosting | 10.0.15 | Microsoft 官方 | App、Cli | DI、設定、Logging 與背景服務生命週期 |
 | Microsoft.Extensions.DependencyInjection.Abstractions | 10.0.15 | Microsoft 官方 | Application、Infrastructure | 各層提供 `IServiceCollection` 註冊方法 |
+| CommunityToolkit.Mvvm | 8.4.2 | .NET Foundation | Presentation | MVVM 基礎（`ObservableObject`、`RelayCommand`、`AsyncRelayCommand`）；不使用原始碼產生器 |
 | xunit | 2.9.3 | 測試（.NET Foundation） | tests | 測試框架 |
 | xunit.runner.visualstudio | 3.1.5 | 測試（.NET Foundation） | tests | `dotnet test` 執行器 |
 | Microsoft.NET.Test.Sdk | 18.0.1 | 測試（Microsoft） | tests | 測試主機 |
@@ -26,9 +27,9 @@
 
 | 套件 | 預計 Phase | 用途 |
 |---|---|---|
-| CommunityToolkit.Mvvm（.NET Foundation） | Phase 3 | MVVM 基礎（ObservableObject、RelayCommand） |
+| （無） | | |
 
 ## 不使用
 
 - Mock 套件：介面都不大，測試使用手寫假物件（Fake）。
-- 圖表套件：Phase 3 先評估 WPF 原生繪圖；若要用套件，屬「其他第三方」，需另行確認。
+- 圖表套件：Phase 3 確認使用 WPF 原生繪圖（[0007](0007-wpf-ui.md)），不加第三方圖表套件。

@@ -6,6 +6,13 @@ using PerformanceMonitor.Core.Models;
 
 namespace PerformanceMonitor.Application.Monitoring;
 
+/// <summary>連續監控（供 <see cref="MonitoringController"/> 使用，測試以假物件取代）。</summary>
+public interface IMonitoringSession
+{
+    /// <summary>執行到取消為止；取消屬於正常停止。</summary>
+    Task RunAsync(CancellationToken cancellationToken);
+}
+
 /// <summary>
 /// 一次監控工作階段：接上 Log 觀察者與告警、執行 <see cref="MonitoringEngine"/>、寫停止 Log
 /// （正常停止含本次 CSV 寫入／遺失列數；未預期例外寫「監控異常結束」與 Error Log 的 InternalError）。
@@ -16,7 +23,7 @@ public sealed class MonitoringSession(
     MonitoringLogObserver observer,
     AlertService alerts,
     IAppLog log,
-    IStorageStatus storage)
+    IStorageStatus storage) : IMonitoringSession
 {
     private const string Source = "Monitor";
 

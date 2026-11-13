@@ -3,15 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PerformanceMonitor.Application;
-using PerformanceMonitor.Application.Logging;
 using PerformanceMonitor.Application.Monitoring;
 using PerformanceMonitor.Application.Output;
 using PerformanceMonitor.Application.Services;
-using PerformanceMonitor.Application.Settings;
 using PerformanceMonitor.Core.Abstractions;
 using PerformanceMonitor.Core.Models;
 using PerformanceMonitor.Infrastructure;
-using PerformanceMonitor.Infrastructure.Settings;
+using PerformanceMonitor.Infrastructure.Startup;
 using PerformanceMonitor.Infrastructure.Storage;
 
 namespace PerformanceMonitor.Cli;
@@ -73,16 +71,16 @@ internal static class Program
     private static async Task<int> RunOnceAsync(bool json)
     {
         AppDataPaths paths = AppDataPaths.CreateDefault();
-        SettingsLoadResult settings = SettingsFileLoader.Load(paths.SettingsFile);
-        foreach (string warning in settings.Warnings)
+        StartupCheck check = MonitoringStartup.Check(paths);
+        foreach (string warning in check.Settings.Warnings)
         {
             await Console.Error.WriteLineAsync($"警告：{warning}").ConfigureAwait(false);
         }
 
-        if (!settings.IsValid)
+        if (!check.Settings.IsValid)
         {
-            await Console.Error.WriteLineAsync($"設定檔有錯誤，未開始監控（{settings.Source}）：").ConfigureAwait(false);
-            foreach (string error in settings.Errors)
+            await Console.Error.WriteLineAsync($"設定檔有錯誤，未開始監控（{check.Settings.Source}）：").ConfigureAwait(false);
+            foreach (string error in check.Settings.Errors)
             {
                 await Console.Error.WriteLineAsync($"  - {error}").ConfigureAwait(false);
             }
@@ -90,11 +88,10 @@ internal static class Program
             return 1;
         }
 
-        IReadOnlyList<string> storageErrors = StorageInitializer.Check(settings.Settings, paths);
-        if (storageErrors.Count > 0)
+        if (check.StorageErrors.Count > 0)
         {
             await Console.Error.WriteLineAsync("資料目錄無法寫入，未開始監控（請修改設定檔的 logging.dataDirectory／logDirectory）：").ConfigureAwait(false);
-            foreach (string error in storageErrors)
+            foreach (string error in check.StorageErrors)
             {
                 await Console.Error.WriteLineAsync($"  - {error}").ConfigureAwait(false);
             }
@@ -103,18 +100,10 @@ internal static class Program
         }
 
         HostApplicationBuilder builder = CreateBuilder();
-        builder.Services.AddSingleton(settings.Settings);
+        builder.Services.AddSingleton(check.Settings.Settings);
         builder.Services.AddSingleton(paths);
         using IHost host = builder.Build();
-
-        IAppLog log = host.Services.GetRequiredService<IAppLog>();
-        string[] sources = [.. host.Services.GetServices<IMonitor>().Select(m => m.SourceDescription).OfType<string>()];
-        StartupLog.Write(log, new StartupInfo(
-            GetVersion(),
-            settings,
-            paths.ResolveDataDirectory(settings.Settings.Logging),
-            paths.ResolveLogDirectory(settings.Settings.Logging),
-            sources));
+        MonitoringStartup.WriteStartupLog(host.Services, GetVersion(), check, paths);
 
         using var cancellation = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) =>

@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Phase 3a（2026-11-13）：WPF 監控啟停、總覽、狀態與錯誤
+
+- 新增 `PerformanceMonitor.Presentation`（ViewModel，不參考 WPF）與測試專案；新增依賴 CommunityToolkit.Mvvm（決策 0007）。
+- WPF：開啟即自動監控、開始／停止按鈕、關閉視窗先停止監控再結束；設定或目錄錯誤時顯示原因且不開始監控。
+- 總覽頁（各模組卡片、進行中告警、最後取樣時間）與狀態與錯誤頁（啟動檢查、CSV 統計、模組與裝置狀態、最近告警）；淺色、繁體中文。
+- `MonitoringController`：背景執行監控、停止時等待補寫與停止 Log、保留異常結束原因。
+- 主控台與 WPF 共用 `MonitoringStartup`（讀取設定、檢查目錄、寫啟動 Log）。
+- Smoke Test 加入 WPF 開啟／關閉檢查。
+
 ### Phase 2-8（2026-11-13）：ACPI 熱區（Phase 2 資料來源完成）
 
 - 新增 ACPI 熱區溫度：PDH `\Thermal Zone Information(*)`，優先 `High Precision Temperature`（0.1 K），沒有時用 `Temperature`（K）；合理範圍 −40～150°C；沒有熱區（含有物件但 PDH 無資料）時 Unavailable。
