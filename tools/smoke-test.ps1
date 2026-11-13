@@ -6,7 +6,8 @@
   2. （僅 Windows）--once --json 實際取樣一次：
      CPU、記憶體必須為 OK 且使用率介於 0～100；磁碟容量必須為 OK 且至少一個固定磁碟；
      磁碟 I/O 必須為 OK，且至少一個邏輯磁碟與一個實體磁碟為 OK、數值不為負、忙碌率介於 0～100；
-     程序 Top N 為 OK；DiskMetrics、DiskIoMetrics、ProcessMetrics CSV 含本次 SampleId；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
+     GPU 必須為 OK（數值合理）或 Unavailable（CI 沒有 NVIDIA GPU），不得為 Error；
+     程序 Top N 為 OK；DiskMetrics、DiskIoMetrics、GpuMetrics、ProcessMetrics CSV 含本次 SampleId；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
      Application Log 有啟動、CPU 來源與「單次取樣完成」。
 .PARAMETER Exe
   PerformanceMonitor.Cli 執行檔路徑。
@@ -92,6 +93,20 @@ if ($null -eq $diskIo -or $diskIo.status -ne 'OK' -or
     Write-Pass "DiskIo：OK，$(($ioItems | ForEach-Object { "$($_.scope) $($_.disk) $($_.status) busy $([math]::Round([double]$_.busyPercent, 1))%" }) -join '、')"
 }
 
+$gpu = $result.modules | Where-Object module -EQ 'Gpu'
+if ($null -eq $gpu -or $gpu.status -notin @('OK', 'Unavailable')) {
+    Write-Fail "Gpu 狀態 $($gpu.status)、錯誤 [$($gpu.errorCode)] $($gpu.errorMessage)"
+} elseif ($gpu.status -eq 'Unavailable') {
+    Write-Pass "Gpu：Unavailable（$($gpu.errorMessage)；沒有 NVIDIA GPU 時的預期結果，GPU 實測為 Skipped）"
+} else {
+    foreach ($g in $gpu.gpus) {
+        if ($g.status -ne 'OK' -or ($null -ne $g.usagePercent -and ($g.usagePercent -lt 0 -or $g.usagePercent -gt 100))) {
+            Write-Fail "GPU $($g.gpuIndex) 狀態 $($g.status)、使用率 $($g.usagePercent)"
+        }
+    }
+    Write-Pass "Gpu：OK，$((@($gpu.gpus) | ForEach-Object { "GPU $($_.gpuIndex) $($_.gpuName) $($_.usagePercent)% $($_.temperatureC)°C" }) -join '、')"
+}
+
 $process = $result.modules | Where-Object module -EQ 'Process'
 $top = @($process.processes)
 if ($null -eq $process -or $process.status -ne 'OK' -or $top.Count -lt 1 -or $top.Count -gt 5 -or ($top | Where-Object { $_.workingSetMB -lt 0 })) {
@@ -130,7 +145,7 @@ if (-not (Test-Path -LiteralPath $csvPath)) {
     }
 }
 
-foreach ($table in @('DiskMetrics', 'DiskIoMetrics', 'ProcessMetrics')) {
+foreach ($table in @('DiskMetrics', 'DiskIoMetrics', 'GpuMetrics', 'ProcessMetrics')) {
     $path = Join-Path $root "Data\$($table)_v1_$date.csv"
     if (-not (Test-Path -LiteralPath $path) -or -not ([System.IO.File]::ReadAllLines($path) | Where-Object { $_.StartsWith("$($result.sampleId),") })) {
         Write-Fail "$table CSV 不存在或沒有本次 SampleId：$path"
@@ -144,13 +159,13 @@ if (-not (Test-Path -LiteralPath $logPath)) {
     Write-Fail "找不到 $logPath"
 } else {
     $log = Get-Content -LiteralPath $logPath -Encoding utf8
-    foreach ($expected in @('[Startup] Windows Performance Monitor', '[Startup] CPU 來源：PDH', '[Monitor] 單次取樣完成')) {
+    foreach ($expected in @('[Startup] Windows Performance Monitor', '[Startup] CPU 來源：PDH', '[Startup] GPU 來源：nvidia-smi', '[Monitor] 單次取樣完成')) {
         if (-not ($log | Where-Object { $_.Contains($expected) })) {
             Write-Fail "Application Log 缺少「$expected」"
         }
     }
     if (-not $script:Failed) {
-        Write-Pass 'Application Log：啟動、CPU 來源、單次取樣完成'
+        Write-Pass 'Application Log：啟動、CPU 與 GPU 來源、單次取樣完成'
     }
 }
 

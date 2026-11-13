@@ -14,7 +14,7 @@
 | 4 | Unit Test | `dotnet test`（含覆蓋率） | 任何測試失敗 |
 | 5 | Build Check | `dotnet publish -r win-x64 --self-contained`（App、Cli） | 無法發行 |
 | 6 | Git Diff Check | `tools/diff-check.sh` | 空白錯誤、合併衝突標記、提交了 CSV／Log 或 Data／Logs 資料夾 |
-| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／ProcessMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU 來源／單次取樣完成 |
+| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU 為 Error（OK 或 Unavailable 才通過）、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU 來源／GPU 來源／單次取樣完成 |
 
 之後每加入一個資料來源，Smoke Test 就加上該模組的檢查。
 
@@ -134,5 +134,15 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：單位換算、忙碌率限制、邏輯磁碟依固定磁碟、實體磁碟排除 _Total 與排序、固定磁碟無計數器、無法列舉磁碟時改用代號執行個體、暖機、單一磁碟讀取失敗、不合理數值、整組計數器失敗、PDH 失敗後重建、加入計數器失敗、無 pdh.dll、CSV Scope／Disk 欄位、文字與 JSON 輸出 | 同上 | Passed（250 個） |
 | Cli `--once` 端對端（DiskIoMetrics CSV 狀態列、啟動 Log 來源） | 同上（DiskIo 為 Unavailable，因為沒有 pdh.dll） | Passed |
-| Smoke Test 實際取樣（加上磁碟 I/O 與 DiskIoMetrics CSV） | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test 實際取樣（加上磁碟 I/O 與 DiskIoMetrics CSV） | Windows CI | Passed（邏輯 C: 忙碌 37.4%、D: 13.3%；實體 0 C:、1 D:） |
 | 磁碟 I/O 數值與工作管理員比對、USB 插拔、繁體中文 Windows | 實機 | Not Tested |
+
+### Phase 2-6（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：移植舊版 Pester GPU 案例（多張 GPU、名稱含逗號、不支援欄位留空、非數字、欄位不足、index 非整數、數值不合理、不受地區設定影響、單張異常、沒有輸出、固定參數與逾時、找不到工具不執行、逾時、非零結束碼、沒有裝置、無法啟動、恢復）、溫度、只在固定位置尋找、實際執行外部程序（輸出、結束碼、逾時結束、取消、找不到檔案）、文字輸出 | 同上 | Passed（287 個） |
+| Cli `--once` 端對端（GPU Unavailable、GpuMetrics 狀態列、啟動 Log 來源） | 同上 | Passed |
+| Smoke Test（GPU 為 OK 或 Unavailable、GpuMetrics CSV、Log 有 GPU 來源） | Windows CI | 見 PR 的 CI 結果 |
+| 真實 NVIDIA GPU（數值、溫度、多張 GPU、驅動程式重啟、逾時） | 實機 | Skipped（CI 沒有 GPU）；Not Tested |

@@ -15,7 +15,7 @@
 | M3 | 記憶體（總量、已用、可用、使用率） | §3.3 | CIM `Win32_OperatingSystem` | 改善 | Win32 `GlobalMemoryStatusEx`（不需 WMI） | 2 |
 | M4 | 磁碟容量（固定磁碟） | §3.4 | CIM `Win32_LogicalDisk`（DriveType 3） | 改善 | `System.IO.DriveInfo`（`DriveType.Fixed`） | 2 |
 | M5 | 磁碟 I/O | — | 舊版無 | 新增（已確認；Phase 2-5 確認加入實體磁碟） | PDH `\LogicalDisk(*)\…`、`\PhysicalDisk(*)\…`；見規格 v2.0 §4.5 | 2 |
-| M6 | NVIDIA GPU 使用率、顯存 | §3.5 | `nvidia-smi`，逾時 Kill | 保留＋新增溫度（已確認） | `Process` 執行 `nvidia-smi`，一次查詢含 `temperature.gpu`；尋找順序、解析規則沿用 v1.4 決策 | 2 |
+| M6 | NVIDIA GPU 使用率、顯存 | §3.5 | `nvidia-smi`，逾時 Kill | 保留＋新增溫度（已確認） | `Process` 執行 `nvidia-smi`，一次查詢含 `temperature.gpu`；解析規則沿用 v1.4 決策；尋找改為只找 System32 與 `%ProgramFiles%\NVIDIA Corporation\NVSMI`，不搜尋 PATH（Phase 2-6 確認） | 2 |
 | M7 | 網路介面卡流量 | §3.6 | CIM `MSFT_NetAdapter*` | 保留，改用 Win32 `GetIfTable2`（已確認） | 有「是否硬體介面卡」旗標與連線速度，篩選結果最接近舊版 | 2 |
 | M8 | 網路篩選規則、合計、速度尖峰 1.1 倍檢查 | §3.6.1 | 見 v1.4 決策 | 保留 | 規則移植為純函式並沿用舊版測試案例 | 2 |
 | M9 | 程序 RAM Top N | §3.7 | `Get-Process`，WorkingSet64 | 保留 | `Process.GetProcesses()`；讀取失敗略過並計數 | 2 |
