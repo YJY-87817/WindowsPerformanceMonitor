@@ -74,6 +74,9 @@ public static class SnapshotFormatter
             MemoryResult memory => memory.UsagePercent is null
                 ? "N/A"
                 : $"{Percent(memory.UsagePercent)} ({Number(memory.UsedGB, "0.00")} / {Number(memory.TotalGB, "0.00")} GB)",
+            DiskResult disk => string.Join("; ", disk.Disks.Select(d => d.Status == Core.Enums.MonitorStatus.OK
+                ? $"{d.Drive} {Percent(d.UsedPercent)} used, {Number(d.FreeGB, "0.00")} GB free"
+                : $"{d.Drive} {d.Status}")),
             _ => null,
         };
         string? error = result.ErrorMessage is null ? null : $"[{result.ErrorCode}] {result.ErrorMessage}";

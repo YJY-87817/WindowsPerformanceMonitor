@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Phase 2-3（2026-11-13）：磁碟容量
+
+- 新增磁碟容量監控：`DriveInfo` 固定磁碟；總量、已使用、可用、使用率、可用百分比；單一磁碟異常不影響其他磁碟；磁碟可用空間告警自此生效。
+- 主控台文字輸出加入磁碟；JSON 不再重複輸出 `devices`；Smoke Test 檢查磁碟與 DiskMetrics CSV。
+
 ### Phase 2-2（2026-11-13）：記憶體
 
 - 新增記憶體監控：Win32 `GlobalMemoryStatusEx`（不需 WMI）；總量、已使用、可用（1024 進位 GB）、使用率；資料不合理時為 DataError。

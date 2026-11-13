@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using PerformanceMonitor.Core.Enums;
 
 namespace PerformanceMonitor.Core.Models.Results;
@@ -9,6 +10,7 @@ public sealed record TemperatureResult(MonitorStatus Status, IReadOnlyList<Therm
     : ModuleResult(ModuleNames.Temperature, Status), IDeviceResult
 {
     /// <inheritdoc />
+    [JsonIgnore]
     public IEnumerable<DeviceItem> Devices => Sensors;
 }
 
