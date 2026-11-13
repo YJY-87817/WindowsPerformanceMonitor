@@ -11,10 +11,11 @@
 | Reporting | `net10.0` | Core |
 | Application | `net10.0` | Core、Reporting |
 | Infrastructure | `net10.0-windows` | Core、Application |
-| App（WPF） | `net10.0-windows` | Application、Infrastructure |
+| Presentation（Phase 3 新增，見 [0007](0007-wpf-ui.md)） | `net10.0` | Core、Application |
+| App（WPF） | `net10.0-windows` | Application、Infrastructure、Presentation |
 | Cli | `net10.0-windows` | Application、Infrastructure |
 
-- Core、Application、Reporting 不綁 Windows，由編譯器確保不會用到 WPF 或 Windows 專屬 API，單元測試可在任何平台執行。
+- Core、Application、Reporting、Presentation 不綁 Windows，由編譯器確保不會用到 WPF 或 Windows 專屬 API，單元測試可在任何平台執行。
 - App 與 Cli 是組裝點（Composition Root），各自呼叫 `AddPerformanceMonitorApplication()` 與 `AddPerformanceMonitorInfrastructure()` 註冊服務。
 - 依賴方向由架構測試檢查（`tests/*/ArchitectureTests.cs`）。
 

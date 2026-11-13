@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PerformanceMonitor.Application\PerformanceMonitor.Application.csproj" />
     <ProjectReference Include="..\PerformanceMonitor.Infrastructure\PerformanceMonitor.Infrastructure.csproj" />
+    <ProjectReference Include="..\PerformanceMonitor.Presentation\PerformanceMonitor.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

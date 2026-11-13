@@ -1,0 +1,46 @@
+<UserControl x:Class="PerformanceMonitor.App.Views.OverviewView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" />
+        <TextBlock Text="{Binding SampleText}" Style="{StaticResource Secondary}" Margin="0,0,0,12" />
+
+        <!-- 進行中的告警 -->
+        <Border Style="{StaticResource Card}" BorderBrush="{StaticResource ErrorBrush}"
+                Visibility="{Binding HasActiveAlerts, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+                <TextBlock Text="進行中的告警" FontWeight="SemiBold" Foreground="{StaticResource ErrorBrush}" />
+                <ItemsControl ItemsSource="{Binding ActiveAlerts}" Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- 各模組卡片 -->
+        <ItemsControl ItemsSource="{Binding Cards}" Focusable="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Style="{StaticResource Card}" Width="400">
+                        <StackPanel>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}" Foreground="{Binding Kind, Converter={StaticResource StatusBrush}}" />
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding ValueText}" FontSize="16" Margin="0,6,0,0" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Message}" Style="{StaticResource Secondary}" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

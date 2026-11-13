@@ -14,7 +14,7 @@
 | 4 | Unit Test | `dotnet test`（含覆蓋率） | 任何測試失敗 |
 | 5 | Build Check | `dotnet publish -r win-x64 --self-contained`（App、Cli） | 無法發行 |
 | 6 | Git Diff Check | `tools/diff-check.sh` | 空白錯誤、合併衝突標記、提交了 CSV／Log 或 Data／Logs 資料夾 |
-| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU、網路（預設篩選）或 ACPI 熱區為 Error（OK 或 Unavailable 才通過）、熱區溫度超出 −40～150°C、`includeNames = ["*"]` 時網路不是 OK 或沒有合計速度、NetworkMetrics CSV 缺該次 SampleId、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics／TemperatureMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU／GPU／網路／ACPI 熱區來源／單次取樣完成 |
+| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe -App publish/App/PerformanceMonitor.exe`（pwsh） | `--self-check` 失敗；（Windows）WPF 30 秒內沒有顯示主視窗、開啟後 Log 沒有「監控開始」、關閉主視窗後 30 秒內沒有結束或 Log 沒有「監控正常停止」或 SystemMetrics CSV 沒有新資料列；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU、網路（預設篩選）或 ACPI 熱區為 Error（OK 或 Unavailable 才通過）、熱區溫度超出 −40～150°C、`includeNames = ["*"]` 時網路不是 OK 或沒有合計速度、NetworkMetrics CSV 缺該次 SampleId、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics／TemperatureMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU／GPU／網路／ACPI 熱區來源／單次取樣完成 |
 
 之後每加入一個資料來源，Smoke Test 就加上該模組的檢查。
 
@@ -164,5 +164,15 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：優先高精度（0.1 K）、沒有高精度計數器或讀不到時改用 K、熱區排序與各自獨立、不合理溫度、暖機、沒有熱區、有物件但無資料時為 Unavailable（不是暖機）、整組讀取失敗、加入兩個計數器、沒有熱區物件時 Unavailable 並重試、PDH 失敗後重建、無 pdh.dll、啟動 Log 說明、文字輸出 | 同上 | Passed（338 個） |
 | Cli `--once` 端對端（Temperature Unavailable、TemperatureMetrics 狀態列、啟動 Log） | 同上 | Passed |
-| Smoke Test（熱區為 OK 或 Unavailable、TemperatureMetrics CSV） | Windows CI | 第一次 Failed：VM 有熱區物件但沒有熱區，PDH 回傳無資料，被誤判為 WarmingUp；修正為 Unavailable 後見 PR 的 CI 結果。同一次 CI 網路 `includeNames = ["*"]` 觀察到非 0 速度 0.12 / 0.05 Mbps |
+| Smoke Test（熱區為 OK 或 Unavailable、TemperatureMetrics CSV） | Windows CI | 第一次 Failed：VM 有熱區物件但沒有熱區，PDH 回傳無資料，被誤判為 WarmingUp；修正為 Unavailable 後 Passed（PDH 0x800007D5）。同一次 CI 網路 `includeNames = ["*"]` 觀察到非 0 速度 0.12 / 0.05 Mbps |
 | 有 ACPI 熱區的筆電、固定值的桌上型電腦、Windows 10 | 實機 | Not Tested |
+
+### Phase 3a（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置（含 WPF XAML 編譯）、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：監控控制器（背景執行、停止等待結束、重複開始只執行一次、停止後再開始、未開始時停止、異常結束原因與再開始、同時停止）；ViewModel（尚未取樣、卡片依模組順序含停用與無法使用、不顯示假數值、超過週期、進行中告警、狀態頁模組／裝置／最近告警／CSV、CSV 遺失醒目提示、設定錯誤時不可開始、開始／停止命令、異常結束提示與再開始）；各模組摘要；狀態中文附英文代碼；Presentation 不參考 WPF／Infrastructure | 同上 | Passed（377 個） |
+| Cli `--once` 改用共用啟動步驟後端對端 | 同上 | Passed |
+| Smoke Test：WPF 開啟後自動監控、關閉主視窗後停止並結束 | Windows CI | 見 PR 的 CI 結果 |
+| 畫面外觀、高 DPI、鍵盤操作、長時間執行 UI 不卡頓 | Windows 實機 | Not Tested |

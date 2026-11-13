@@ -22,6 +22,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SampleRunner>();
         services.AddSingleton<MonitoringEngine>();
         services.AddSingleton<MonitoringSession>();
+        services.AddSingleton<IMonitoringSession>(sp => sp.GetRequiredService<MonitoringSession>());
+        services.AddSingleton<MonitoringController>();
         services.AddSingleton<SnapshotStore>();
         services.AddSingleton<ISnapshotProvider>(sp => sp.GetRequiredService<SnapshotStore>());
         services.AddSingleton<StorageStatus>();

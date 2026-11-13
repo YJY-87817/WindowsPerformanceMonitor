@@ -58,7 +58,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: bash tools/diff-check.sh
 
-      - name: 7. Smoke Test（自我檢查＋實際取樣一次）
+      - name: 7. Smoke Test（自我檢查＋實際取樣＋WPF 開啟／關閉）
         if: ${{ !cancelled() }}
         shell: pwsh
-        run: ./tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe
+        run: ./tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe -App publish/App/PerformanceMonitor.exe

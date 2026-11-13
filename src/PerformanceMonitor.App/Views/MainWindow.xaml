@@ -1,8 +1,53 @@
 <Window x:Class="PerformanceMonitor.App.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{Binding Title}" Height="450" Width="800">
-    <Grid Margin="16">
-        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
-    </Grid>
+        xmlns:vm="clr-namespace:PerformanceMonitor.Presentation.ViewModels;assembly=PerformanceMonitor.Presentation"
+        xmlns:views="clr-namespace:PerformanceMonitor.App.Views"
+        Title="{Binding Title}" Height="720" Width="1100" MinHeight="480" MinWidth="760"
+        Background="{StaticResource WindowBackgroundBrush}"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:OverviewViewModel}">
+            <views:OverviewView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:StatusViewModel}">
+            <views:StatusView />
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- 上方：監控狀態與開始／停止 -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,10">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left" Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Ellipse Width="10" Height="10" Fill="{Binding StateKind, Converter={StaticResource StatusBrush}}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding StateText}" Margin="6,0,12,0" VerticalAlignment="Center" AutomationProperties.Name="監控狀態" />
+                    <Button Content="開始(_S)" Command="{Binding StartCommand}" AutomationProperties.Name="開始監控" />
+                    <Button Content="停止(_T)" Command="{Binding StopCommand}" AutomationProperties.Name="停止監控" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 醒目提示：設定錯誤、監控異常結束、CSV 遺失 -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource BannerBrush}" Padding="16,8"
+                Visibility="{Binding HasBanner, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="{Binding Banner}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- 左側導覽 -->
+        <ListBox DockPanel.Dock="Left" Width="170" ItemsSource="{Binding Pages}" SelectedItem="{Binding SelectedPage}"
+                 Background="{StaticResource NavigationBrush}" BorderThickness="0" Padding="0,8"
+                 AutomationProperties.Name="頁面">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Title}" Padding="12,8" FontSize="14" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+            <ContentControl Content="{Binding SelectedPage}" Margin="20" Focusable="False" />
+        </ScrollViewer>
+    </DockPanel>
 </Window>

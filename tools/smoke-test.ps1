@@ -13,12 +13,18 @@
      Application Log 有啟動、CPU、GPU、網路與 ACPI 熱區來源與「單次取樣完成」。
   3. （僅 Windows）以 settings.json 設定 network.includeNames = ["*"] 再取樣一次：
      網路必須為 OK 且有合計速度；NetworkMetrics CSV 含該次 SampleId。結束後移除設定檔。
+  4. （僅 Windows，指定 -App 時）WPF 程式：開啟後自動開始監控（Application Log 有「監控開始」），
+     關閉主視窗後在 30 秒內結束，且先停止監控（Log 有「監控正常停止」、SystemMetrics CSV 有補寫的資料列）。
 .PARAMETER Exe
   PerformanceMonitor.Cli 執行檔路徑。
+.PARAMETER App
+  PerformanceMonitor（WPF）執行檔路徑；省略時不檢查 WPF。
 #>
 param(
     [Parameter(Mandatory)]
-    [string] $Exe
+    [string] $Exe,
+
+    [string] $App
 )
 
 $ErrorActionPreference = 'Stop'
@@ -221,6 +227,50 @@ try {
     }
 } finally {
     if ($null -ne $backup) { [System.IO.File]::WriteAllBytes($settingsPath, $backup) } else { Remove-Item -LiteralPath $settingsPath -ErrorAction SilentlyContinue }
+}
+
+# 4. WPF：開啟即監控，關閉主視窗即停止並結束。
+if ($App) {
+    function Get-LogCount([string] $Text) {
+        if (-not (Test-Path -LiteralPath $logPath)) { return 0 }
+        return @(Get-Content -LiteralPath $logPath -Encoding utf8 | Where-Object { $_.Contains($Text) }).Count
+    }
+    $startedBefore = Get-LogCount '[Monitor] 監控開始'
+    $stoppedBefore = Get-LogCount '[Monitor] 監控正常停止'
+    $rowsBefore = @([System.IO.File]::ReadAllLines($csvPath)).Count
+
+    $process = Start-Process -FilePath (Resolve-Path -LiteralPath $App).Path -PassThru
+    $deadline = (Get-Date).AddSeconds(30)
+    do {
+        Start-Sleep -Milliseconds 500
+        $process.Refresh()
+    } while (-not $process.HasExited -and $process.MainWindowHandle -eq 0 -and (Get-Date) -lt $deadline)
+
+    if ($process.HasExited) {
+        Write-Fail "WPF 程式開啟後立即結束（結束碼 $($process.ExitCode)）"
+    } elseif ($process.MainWindowHandle -eq 0) {
+        Write-Fail 'WPF 程式 30 秒內沒有顯示主視窗'
+        Stop-Process -Id $process.Id -Force
+    } else {
+        Start-Sleep -Seconds 5 # 暖機與幾次取樣
+        if ((Get-LogCount '[Monitor] 監控開始') -le $startedBefore) {
+            Write-Fail 'WPF 開啟後 Application Log 沒有「監控開始」（應自動開始監控）'
+        } else {
+            Write-Pass 'WPF：顯示主視窗並自動開始監控'
+        }
+
+        $null = $process.CloseMainWindow()
+        if (-not $process.WaitForExit(30000)) {
+            Write-Fail 'WPF 關閉主視窗後 30 秒內沒有結束'
+            Stop-Process -Id $process.Id -Force
+        } elseif ((Get-LogCount '[Monitor] 監控正常停止') -le $stoppedBefore) {
+            Write-Fail 'WPF 關閉後 Application Log 沒有「監控正常停止」'
+        } elseif (@([System.IO.File]::ReadAllLines($csvPath)).Count -le $rowsBefore) {
+            Write-Fail 'WPF 監控期間與停止時沒有寫入 SystemMetrics CSV'
+        } else {
+            Write-Pass "WPF：關閉主視窗後停止監控並結束（結束碼 $($process.ExitCode)、CSV 新增 $(@([System.IO.File]::ReadAllLines($csvPath)).Count - $rowsBefore) 列）"
+        }
+    }
 }
 
 if ($script:Failed) { exit 1 }
