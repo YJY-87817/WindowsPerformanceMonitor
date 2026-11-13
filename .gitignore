@@ -1,0 +1,16 @@
+# 建置輸出
+bin/
+obj/
+publish/
+artifacts/
+TestResults/
+*.user
+.vs/
+.vscode/
+.idea/
+
+# 監控資料與 Log：可能揭露使用者使用的軟體（舊規格 v1.5 §7.4），不進版控。
+Data/
+Logs/
+*.csv
+*.log

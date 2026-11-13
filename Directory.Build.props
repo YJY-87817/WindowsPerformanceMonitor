@@ -1,0 +1,28 @@
+<Project>
+  <!-- 所有專案共用的建置設定（見 docs/decisions/0002-layered-architecture.md）。 -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Lint：.NET 分析器與程式碼樣式在建置時檢查，警告一律視為錯誤。 -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591：公開成員缺少 XML 註解。骨架階段不強制，Phase 1 起再評估。 -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!-- 讓 net10.0-windows 專案也能在 Linux 開發環境建置（執行仍需 Windows）。 -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <Deterministic>true</Deterministic>
+    <IsPackable>false</IsPackable>
+    <Version>0.1.0</Version>
+    <Product>Windows Performance Monitor</Product>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>
