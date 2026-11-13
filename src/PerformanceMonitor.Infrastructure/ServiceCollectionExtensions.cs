@@ -37,6 +37,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMonitor, MemoryMonitor>();
         services.AddSingleton<IDriveSource, DriveInfoSource>();
         services.AddSingleton<IMonitor, DiskMonitor>();
+        services.AddSingleton<IMonitor, DiskIoMonitor>();
         services.AddSingleton<IProcessSource, SystemProcessSource>();
         services.AddSingleton<IMonitor, ProcessMonitor>();
         return services;

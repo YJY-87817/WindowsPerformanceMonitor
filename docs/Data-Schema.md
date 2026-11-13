@@ -1,6 +1,7 @@
 # 資料格式（schema v1 初稿）
 
-- 版本：**v1**（2026-11-13，Phase 1b 實作）。欄位已由程式 `CsvTables` 實作並以測試固定；之後欄位有任何改變都必須將該檔版本 +1
+- 版本：**v1**（2026-11-13，Phase 1b 實作）。欄位已由程式 `CsvTables` 實作並以測試固定
+- 版本 +1 規則自**第一次發行**起適用；發行前（Phase 2 開發中）欄位調整直接修改 v1，並記錄在下方修訂紀錄
 - 相關決策：[0005 資料目錄、檔案命名與 schema 版本](decisions/0005-data-storage.md)
 
 ## 1. 檔案
@@ -73,11 +74,13 @@ Logs/
 
 `SampleId`、`TimestampUtc`、`Drive`（例如 `C:`）、`VolumeLabel`、`TotalGB`、`UsedGB`、`FreeGB`、`UsedPercent`、`FreePercent`、`Status`、`ErrorCode`
 
-### 3.3 DiskIoMetrics_v1（每個邏輯磁碟一筆）
+### 3.3 DiskIoMetrics_v1（每個邏輯磁碟與實體磁碟各一筆）
 
-| 欄位 | 型態 | 來源（`\LogicalDisk(*)\…`） |
+| 欄位 | 型態 | 來源（`\LogicalDisk(*)\…` 或 `\PhysicalDisk(*)\…`） |
 |---|---|---|
-| SampleId、TimestampUtc、Drive | | |
+| SampleId、TimestampUtc | | |
+| Scope | Text | `Logical`（邏輯磁碟）或 `Physical`（實體磁碟） |
+| Disk | Text | 邏輯磁碟為代號（`C:`）；實體磁碟為 Windows 名稱（`0 C: D:`） |
 | ReadMBps | Decimal | `Disk Read Bytes/sec` ÷ 1,048,576 |
 | WriteMBps | Decimal | `Disk Write Bytes/sec` ÷ 1,048,576 |
 | ReadIOPS | Decimal | `Disk Reads/sec` |
@@ -87,7 +90,7 @@ Logs/
 | BusyPercent | Decimal | 100 − `% Idle Time`，限制在 0～100 |
 | Status、ErrorCode | | 第一次讀取為 `WarmingUp` |
 
-延遲是計數器層級的平均服務時間，不等同應用程式端到端延遲。
+延遲是計數器層級的平均服務時間，不等同應用程式端到端延遲。邏輯與實體磁碟是同一份 I/O 的兩種角度，彙總時須以 `Scope` 分開，不可相加。
 
 ### 3.4 GpuMetrics_v1（每張 NVIDIA GPU 一筆）
 

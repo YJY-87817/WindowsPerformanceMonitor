@@ -32,9 +32,9 @@ public static class CsvTables
     public static readonly CsvTable DiskIoMetrics = new(
         "DiskIoMetrics",
         1,
-        ["SampleId", "TimestampUtc", "Drive", "ReadMBps", "WriteMBps", "ReadIOPS", "WriteIOPS", "ReadLatencyMs", "WriteLatencyMs", "BusyPercent", "Status", "ErrorCode"],
-        s => DeviceRows<DiskIoResult, DiskIoItem>(s, ModuleNames.DiskIo, 8, r => r.Disks, d =>
-            [Escape(d.Drive), Number(d.ReadMBps), Number(d.WriteMBps), Number(d.ReadIops), Number(d.WriteIops), Number(d.ReadLatencyMs), Number(d.WriteLatencyMs), Number(d.BusyPercent)]));
+        ["SampleId", "TimestampUtc", "Scope", "Disk", "ReadMBps", "WriteMBps", "ReadIOPS", "WriteIOPS", "ReadLatencyMs", "WriteLatencyMs", "BusyPercent", "Status", "ErrorCode"],
+        s => DeviceRows<DiskIoResult, DiskIoItem>(s, ModuleNames.DiskIo, 9, r => r.Disks, d =>
+            [d.Scope.ToString(), Escape(d.Disk), Number(d.ReadMBps), Number(d.WriteMBps), Number(d.ReadIops), Number(d.WriteIops), Number(d.ReadLatencyMs), Number(d.WriteLatencyMs), Number(d.BusyPercent)]));
 
     /// <summary>GpuMetrics。</summary>
     public static readonly CsvTable GpuMetrics = new(

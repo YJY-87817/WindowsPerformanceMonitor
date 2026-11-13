@@ -23,6 +23,12 @@ internal sealed class FakePdhFactory : IPdhQueryFactory
 
     public Exception? CreateThrows { get; set; }
 
+    /// <summary>萬用字元計數器的讀值（依計數器路徑）；未設定時為 NotReady。</summary>
+    public Func<string, PdhArrayValue>? ArrayValues { get; set; }
+
+    /// <summary>加入此路徑的萬用字元計數器時擲出例外。</summary>
+    public string? AddArrayThrowsFor { get; set; }
+
     public IPdhQuery Create()
     {
         if (CreateThrows is not null)
@@ -42,6 +48,17 @@ internal sealed class FakePdhFactory : IPdhQueryFactory
             return new Counter(owner);
         }
 
+        public IPdhCounterArray AddCounterArray(string englishPath)
+        {
+            if (englishPath == owner.AddArrayThrowsFor)
+            {
+                throw new PdhException("加入計數器", 0xC0000BB8);
+            }
+
+            owner.AddedPaths.Add(englishPath);
+            return new CounterArray(owner, englishPath);
+        }
+
         public void Collect()
         {
             owner.Collects++;
@@ -58,6 +75,11 @@ internal sealed class FakePdhFactory : IPdhQueryFactory
     private sealed class Counter(FakePdhFactory owner) : IPdhCounter
     {
         public PdhValue Read() => owner.Values.Count > 0 ? owner.Values.Dequeue() : new PdhValue(PdhReadStatus.NotReady, 0, 0);
+    }
+
+    private sealed class CounterArray(FakePdhFactory owner, string path) : IPdhCounterArray
+    {
+        public PdhArrayValue ReadArray() => owner.ArrayValues?.Invoke(path) ?? PdhArrayValue.Empty(PdhReadStatus.NotReady, 0);
     }
 }
 

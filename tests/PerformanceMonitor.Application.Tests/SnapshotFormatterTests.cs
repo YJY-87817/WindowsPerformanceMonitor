@@ -23,6 +23,10 @@ public class SnapshotFormatterTests
             ]),
             ModuleResult.Unavailable(ModuleNames.Gpu, "找不到 nvidia-smi"),
             new ProcessResult(MonitorStatus.OK, [new ProcessItem(1, "chrome", 1, 1200.55, null), new ProcessItem(2, "code", 2, 850.2, null), new ProcessItem(3, "a", 3, 3, null), new ProcessItem(4, "b", 4, 1, null)], 0, 0),
+            new DiskIoResult(MonitorStatus.OK, [
+                new DiskIoItem(MonitorStatus.OK, DiskIoScope.Logical, "C:", 12.345, 1.5, 100, 20, 0.8, 1.2, 37.25),
+                new DiskIoItem(MonitorStatus.WarmingUp, DiskIoScope.Physical, "0 C: D:", null, null, null, null, null, null, null),
+            ]),
         ],
         TimeSpan.FromMilliseconds(345.6),
         LoopOverrun: false);
@@ -46,6 +50,7 @@ public class SnapshotFormatterTests
         Assert.Contains("Disk         Error        C: 72.5% used, 27.50 GB free; D: Error", text, StringComparison.Ordinal);
         Assert.Contains("Gpu          Unavailable  [Unavailable] 找不到 nvidia-smi", text, StringComparison.Ordinal);
         Assert.Contains("Process      OK           chrome 1200.6 MB, code 850.2 MB, a 3.0 MB", text, StringComparison.Ordinal);
+        Assert.Contains("DiskIo       OK           C: R 12.35 / W 1.50 MB/s, busy 37.3%; PhysicalDisk(0 C: D:) WarmingUp", text, StringComparison.Ordinal);
         Assert.DoesNotContain("b 1.0 MB", text, StringComparison.Ordinal);
         Assert.Contains("Duration: 346 ms  LoopOverrun: False", text, StringComparison.Ordinal);
         Assert.Contains("CSV: written 3, lost 0", text, StringComparison.Ordinal);
@@ -69,6 +74,9 @@ public class SnapshotFormatterTests
         Assert.False(disk.TryGetProperty("devices", out _));
         JsonElement gpu = root.GetProperty("modules")[3];
         Assert.Equal("Unavailable", gpu.GetProperty("errorCode").GetString());
+        JsonElement io = root.GetProperty("modules")[5].GetProperty("disks")[1];
+        Assert.Equal("Physical", io.GetProperty("scope").GetString());
+        Assert.Equal("0 C: D:", io.GetProperty("disk").GetString());
         Assert.Equal(3, root.GetProperty("csv").GetProperty("writtenRows").GetInt64());
         Assert.Contains("找不到 nvidia-smi", json, StringComparison.Ordinal);
     }

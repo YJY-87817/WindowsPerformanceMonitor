@@ -77,6 +77,9 @@ public static class SnapshotFormatter
             DiskResult disk => string.Join("; ", disk.Disks.Select(d => d.Status == Core.Enums.MonitorStatus.OK
                 ? $"{d.Drive} {Percent(d.UsedPercent)} used, {Number(d.FreeGB, "0.00")} GB free"
                 : $"{d.Drive} {d.Status}")),
+            DiskIoResult io => string.Join("; ", io.Disks.Select(d => d.Status == Core.Enums.MonitorStatus.OK
+                ? $"{d.DeviceId} R {Number(d.ReadMBps, "0.00")} / W {Number(d.WriteMBps, "0.00")} MB/s, busy {Percent(d.BusyPercent)}"
+                : $"{d.DeviceId} {d.Status}")),
             ProcessResult process => string.Join(", ", process.Processes.Take(3).Select(p => $"{p.ProcessName} {Number(p.WorkingSetMB, "0.0")} MB")),
             _ => null,
         };

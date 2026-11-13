@@ -14,7 +14,7 @@
 | 4 | Unit Test | `dotnet test`（含覆蓋率） | 任何測試失敗 |
 | 5 | Build Check | `dotnet publish -r win-x64 --self-contained`（App、Cli） | 無法發行 |
 | 6 | Git Diff Check | `tools/diff-check.sh` | 空白錯誤、合併衝突標記、提交了 CSV／Log 或 Data／Logs 資料夾 |
-| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、程序不是 OK 或筆數不在 1～5、DiskMetrics／ProcessMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU 來源／單次取樣完成 |
+| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／ProcessMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU 來源／單次取樣完成 |
 
 之後每加入一個資料來源，Smoke Test 就加上該模組的檢查。
 
@@ -125,4 +125,14 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 |---|---|---|
 | Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：Top N 與排名、同值依 PID、略過與缺欄位計數、只讀前 N 名的啟動時間、沒有可讀程序、列舉失敗、真實程序列舉、文字輸出 | 同上 | Passed（226 個） |
-| Smoke Test 實際取樣（加上程序 Top 5 與 ProcessMetrics CSV） | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test 實際取樣（加上程序 Top 5 與 ProcessMetrics CSV） | Windows CI | Passed（CPU 40.4%、記憶體 38.3%、C: 81.4%、D: 0.5%、Top 5，略過 0） |
+
+### Phase 2-5（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：單位換算、忙碌率限制、邏輯磁碟依固定磁碟、實體磁碟排除 _Total 與排序、固定磁碟無計數器、無法列舉磁碟時改用代號執行個體、暖機、單一磁碟讀取失敗、不合理數值、整組計數器失敗、PDH 失敗後重建、加入計數器失敗、無 pdh.dll、CSV Scope／Disk 欄位、文字與 JSON 輸出 | 同上 | Passed（250 個） |
+| Cli `--once` 端對端（DiskIoMetrics CSV 狀態列、啟動 Log 來源） | 同上（DiskIo 為 Unavailable，因為沒有 pdh.dll） | Passed |
+| Smoke Test 實際取樣（加上磁碟 I/O 與 DiskIoMetrics CSV） | Windows CI | 見 PR 的 CI 結果 |
+| 磁碟 I/O 數值與工作管理員比對、USB 插拔、繁體中文 Windows | 實機 | Not Tested |
