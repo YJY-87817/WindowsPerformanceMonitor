@@ -5,7 +5,7 @@
   1. --self-check 必須通過。
   2. （僅 Windows）--once --json 實際取樣一次：
      CPU、記憶體必須為 OK 且使用率介於 0～100；磁碟容量必須為 OK 且至少一個固定磁碟；
-     DiskMetrics CSV 含本次 SampleId；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
+     程序 Top N 為 OK；DiskMetrics、ProcessMetrics CSV 含本次 SampleId；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
      Application Log 有啟動、CPU 來源與「單次取樣完成」。
 .PARAMETER Exe
   PerformanceMonitor.Cli 執行檔路徑。
@@ -75,6 +75,14 @@ if ($null -eq $disk -or $disk.status -ne 'OK' -or @($disk.disks).Count -eq 0) {
     Write-Pass "Disk：OK，$((@($disk.disks) | ForEach-Object { "$($_.drive) $([math]::Round($_.usedPercent, 1))%" }) -join '、')"
 }
 
+$process = $result.modules | Where-Object module -EQ 'Process'
+$top = @($process.processes)
+if ($null -eq $process -or $process.status -ne 'OK' -or $top.Count -lt 1 -or $top.Count -gt 5 -or ($top | Where-Object { $_.workingSetMB -lt 0 })) {
+    Write-Fail "Process 狀態 $($process.status)、筆數 $($top.Count)、錯誤 $($process.errorMessage)"
+} else {
+    Write-Pass "Process：OK，Top $($top.Count)（略過 $($process.skippedProcessCount)、缺欄位 $($process.missingFieldCount)）"
+}
+
 if ($result.csv.lostRows -ne 0 -or $result.csv.writtenRows -lt 1) {
     Write-Fail "CSV 寫入 $($result.csv.writtenRows) 列、遺失 $($result.csv.lostRows) 列：$($result.csv.lastError)"
 }
@@ -110,6 +118,13 @@ if (-not (Test-Path -LiteralPath $diskCsv) -or -not ([System.IO.File]::ReadAllLi
     Write-Fail "DiskMetrics CSV 不存在或沒有本次 SampleId：$diskCsv"
 } else {
     Write-Pass 'DiskMetrics CSV：有本次資料列'
+}
+
+$processCsv = Join-Path $root "Data\ProcessMetrics_v1_$date.csv"
+if (-not (Test-Path -LiteralPath $processCsv) -or -not ([System.IO.File]::ReadAllLines($processCsv) | Where-Object { $_.StartsWith("$($result.sampleId),") })) {
+    Write-Fail "ProcessMetrics CSV 不存在或沒有本次 SampleId：$processCsv"
+} else {
+    Write-Pass 'ProcessMetrics CSV：有本次資料列'
 }
 
 $logPath = Join-Path $root "Logs\Application_$date.log"

@@ -9,6 +9,7 @@ using PerformanceMonitor.Infrastructure.Storage.Csv;
 using PerformanceMonitor.Infrastructure.Windows.Disk;
 using PerformanceMonitor.Infrastructure.Windows.Memory;
 using PerformanceMonitor.Infrastructure.Windows.Pdh;
+using PerformanceMonitor.Infrastructure.Windows.Processes;
 
 namespace PerformanceMonitor.Infrastructure;
 
@@ -36,6 +37,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMonitor, MemoryMonitor>();
         services.AddSingleton<IDriveSource, DriveInfoSource>();
         services.AddSingleton<IMonitor, DiskMonitor>();
+        services.AddSingleton<IProcessSource, SystemProcessSource>();
+        services.AddSingleton<IMonitor, ProcessMonitor>();
         return services;
     }
 }

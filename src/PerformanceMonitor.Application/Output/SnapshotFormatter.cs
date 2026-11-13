@@ -77,6 +77,7 @@ public static class SnapshotFormatter
             DiskResult disk => string.Join("; ", disk.Disks.Select(d => d.Status == Core.Enums.MonitorStatus.OK
                 ? $"{d.Drive} {Percent(d.UsedPercent)} used, {Number(d.FreeGB, "0.00")} GB free"
                 : $"{d.Drive} {d.Status}")),
+            ProcessResult process => string.Join(", ", process.Processes.Take(3).Select(p => $"{p.ProcessName} {Number(p.WorkingSetMB, "0.0")} MB")),
             _ => null,
         };
         string? error = result.ErrorMessage is null ? null : $"[{result.ErrorCode}] {result.ErrorMessage}";

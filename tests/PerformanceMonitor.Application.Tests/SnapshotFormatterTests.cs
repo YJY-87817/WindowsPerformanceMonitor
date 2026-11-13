@@ -22,6 +22,7 @@ public class SnapshotFormatterTests
                 new DiskItem(MonitorStatus.Error, "D:", null, null, null, null, null, null),
             ]),
             ModuleResult.Unavailable(ModuleNames.Gpu, "找不到 nvidia-smi"),
+            new ProcessResult(MonitorStatus.OK, [new ProcessItem(1, "chrome", 1, 1200.55, null), new ProcessItem(2, "code", 2, 850.2, null), new ProcessItem(3, "a", 3, 3, null), new ProcessItem(4, "b", 4, 1, null)], 0, 0),
         ],
         TimeSpan.FromMilliseconds(345.6),
         LoopOverrun: false);
@@ -44,6 +45,8 @@ public class SnapshotFormatterTests
         Assert.Contains("Memory       OK           65.2% (10.43 / 16.00 GB)", text, StringComparison.Ordinal);
         Assert.Contains("Disk         Error        C: 72.5% used, 27.50 GB free; D: Error", text, StringComparison.Ordinal);
         Assert.Contains("Gpu          Unavailable  [Unavailable] 找不到 nvidia-smi", text, StringComparison.Ordinal);
+        Assert.Contains("Process      OK           chrome 1200.6 MB, code 850.2 MB, a 3.0 MB", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("b 1.0 MB", text, StringComparison.Ordinal);
         Assert.Contains("Duration: 346 ms  LoopOverrun: False", text, StringComparison.Ordinal);
         Assert.Contains("CSV: written 3, lost 0", text, StringComparison.Ordinal);
     }
