@@ -16,6 +16,7 @@ public class SnapshotFormatterTests
         "PC",
         [
             new CpuResult(MonitorStatus.OK, 25.55) { Duration = TimeSpan.FromMilliseconds(12) },
+            new MemoryResult(MonitorStatus.OK, 16, 10.4321, 5.5679, 65.2),
             ModuleResult.Unavailable(ModuleNames.Gpu, "找不到 nvidia-smi"),
         ],
         TimeSpan.FromMilliseconds(345.6),
@@ -36,6 +37,7 @@ public class SnapshotFormatterTests
         Assert.Contains("Time: 2026-11-13T14:00:00+08:00  Computer: PC", text, StringComparison.Ordinal);
         Assert.Contains("SampleId: 0123456789abcdef0123456789abcdef", text, StringComparison.Ordinal);
         Assert.Contains("Cpu          OK           25.6%", text, StringComparison.Ordinal);
+        Assert.Contains("Memory       OK           65.2% (10.43 / 16.00 GB)", text, StringComparison.Ordinal);
         Assert.Contains("Gpu          Unavailable  [Unavailable] 找不到 nvidia-smi", text, StringComparison.Ordinal);
         Assert.Contains("Duration: 346 ms  LoopOverrun: False", text, StringComparison.Ordinal);
         Assert.Contains("CSV: written 3, lost 0", text, StringComparison.Ordinal);
@@ -54,7 +56,7 @@ public class SnapshotFormatterTests
         Assert.Equal("Cpu", cpu.GetProperty("module").GetString());
         Assert.Equal("OK", cpu.GetProperty("status").GetString());
         Assert.Equal(25.55, cpu.GetProperty("usagePercent").GetDouble());
-        JsonElement gpu = root.GetProperty("modules")[1];
+        JsonElement gpu = root.GetProperty("modules")[2];
         Assert.Equal("Unavailable", gpu.GetProperty("errorCode").GetString());
         Assert.Equal(3, root.GetProperty("csv").GetProperty("writtenRows").GetInt64());
         Assert.Contains("找不到 nvidia-smi", json, StringComparison.Ordinal);

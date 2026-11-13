@@ -19,8 +19,8 @@
 
 | 資料 | 來源 | 權限 | 無法取得時 | 實機狀態 |
 |---|---|---|---|---|
-| CPU 使用率 | PDH `\Processor(_Total)\% Processor Time`（英文名稱加入） | 一般使用者 | 第一次 `WarmingUp`；讀取失敗 `Error`；無 pdh.dll `Unavailable` | Windows CI：見 Phase 2-1 PR 結果；Windows 11／10、繁體中文 Not Tested |
-| 記憶體 | Win32 `GlobalMemoryStatusEx` | 一般使用者 | `Error` | Not Tested |
+| CPU 使用率 | PDH `\Processor(_Total)\% Processor Time`（英文名稱加入） | 一般使用者 | 第一次 `WarmingUp`；讀取失敗 `Error`；無 pdh.dll `Unavailable` | Windows CI（Windows Server，英文）Passed；Windows 11／10、繁體中文 Not Tested |
+| 記憶體 | Win32 `GlobalMemoryStatusEx` | 一般使用者 | 資料不合理 `Error`（DataError）；API 失敗 `Error`（TransientError） | Windows CI：見 Phase 2-2 PR 結果；Windows 11／10 Not Tested |
 | 磁碟容量 | `System.IO.DriveInfo`（固定磁碟） | 一般使用者 | 該磁碟 `Error` | Not Tested |
 | 磁碟 I/O | PDH `\LogicalDisk(*)\…` | 一般使用者 | 第一次 `WarmingUp`；磁碟消失 `Unavailable` | Not Tested |
 | NVIDIA GPU | `nvidia-smi`（PATH，或 `%ProgramFiles%\NVIDIA Corporation\NVSMI`） | 一般使用者 | 找不到工具 `Unavailable`；逾時或格式錯誤 `Error` | Not Tested |

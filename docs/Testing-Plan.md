@@ -14,7 +14,7 @@
 | 4 | Unit Test | `dotnet test`（含覆蓋率） | 任何測試失敗 |
 | 5 | Build Check | `dotnet publish -r win-x64 --self-contained`（App、Cli） | 無法發行 |
 | 6 | Git Diff Check | `tools/diff-check.sh` | 空白錯誤、合併衝突標記、提交了 CSV／Log 或 Data／Logs 資料夾 |
-| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 不是 OK 或使用率不在 0～100、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU 來源／單次取樣完成 |
+| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU 來源／單次取樣完成 |
 
 之後每加入一個資料來源，Smoke Test 就加上該模組的檢查。
 
@@ -100,5 +100,13 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：CPU 監控（英文計數器、暖機、0～100 檢查、讀取失敗、PDH 失敗後重建、無 pdh.dll）、單次取樣、文字與 JSON 輸出、啟動 Log 資料來源 | 同上 | Passed（200 個） |
 | Cli `--once`／`--once --json` 端對端（設定、啟動 Log、取樣、CSV、Log） | 同上（CPU 為 Unavailable，因為沒有 pdh.dll） | Passed |
-| Smoke Test 實際取樣（CPU OK、CSV、Log） | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test 實際取樣（CPU OK、CSV、Log） | Windows CI | Passed（CPU 20.0%） |
 | 繁體中文 Windows、Windows 10 | 實機 | Not Tested |
+
+### Phase 2-2（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：記憶體計算（1024 進位、使用率、全部可用為 0%）、總量 0 與可用大於總量、API 失敗、無 kernel32、文字輸出 | 同上 | Passed（207 個） |
+| Smoke Test 實際取樣（CPU、記憶體 OK） | Windows CI | 見 PR 的 CI 結果 |

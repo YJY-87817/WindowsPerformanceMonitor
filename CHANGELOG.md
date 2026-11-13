@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Phase 2-2（2026-11-13）：記憶體
+
+- 新增記憶體監控：Win32 `GlobalMemoryStatusEx`（不需 WMI）；總量、已使用、可用（1024 進位 GB）、使用率；資料不合理時為 DataError。
+- 主控台文字輸出加入記憶體；Smoke Test 檢查記憶體。
+
 ### Phase 2-1（2026-11-13）：CPU 與單次取樣流程
 
 - 新增 CPU 監控：PDH `\Processor(_Total)\% Processor Time`，以英文名稱加入（不受語系影響）；暖機、0～100 檢查、失敗時下次重建查詢；不提供 WMI 備援。

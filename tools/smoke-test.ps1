@@ -4,7 +4,7 @@
   Smoke Test：執行發行後的主控台程式。
   1. --self-check 必須通過。
   2. （僅 Windows）--once --json 實際取樣一次：
-     CPU 必須為 OK 且使用率介於 0～100；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
+     CPU、記憶體必須為 OK 且使用率介於 0～100；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
      Application Log 有啟動、CPU 來源與「單次取樣完成」。
 .PARAMETER Exe
   PerformanceMonitor.Cli 執行檔路徑。
@@ -43,13 +43,23 @@ $json = $raw -join "`n"
 $result = $json | ConvertFrom-Json
 Write-Pass "SampleId：$($result.sampleId)，耗時 $($result.sampleDurationMs) ms"
 
-$cpu = $result.modules | Where-Object module -EQ 'Cpu'
-if ($null -eq $cpu) {
-    Write-Fail '結果中沒有 Cpu 模組'
-} elseif ($cpu.status -ne 'OK' -or $null -eq $cpu.usagePercent -or $cpu.usagePercent -lt 0 -or $cpu.usagePercent -gt 100) {
-    Write-Fail "Cpu 狀態 $($cpu.status)、使用率 $($cpu.usagePercent)、錯誤 $($cpu.errorMessage)"
-} else {
-    Write-Pass "Cpu：OK，$($cpu.usagePercent)%"
+function Test-Percent([string] $Module, [string] $Property) {
+    $m = $result.modules | Where-Object module -EQ $Module
+    $value = if ($null -ne $m) { $m.$Property } else { $null }
+    if ($null -eq $m) {
+        Write-Fail "結果中沒有 $Module 模組"
+    } elseif ($m.status -ne 'OK' -or $null -eq $value -or $value -lt 0 -or $value -gt 100) {
+        Write-Fail "$Module 狀態 $($m.status)、$Property $value、錯誤 $($m.errorMessage)"
+    } else {
+        Write-Pass "$($Module)：OK，$Property $value"
+    }
+    return $m
+}
+
+$null = Test-Percent 'Cpu' 'usagePercent'
+$memory = Test-Percent 'Memory' 'usagePercent'
+if ($null -ne $memory -and $memory.status -eq 'OK' -and -not ($memory.totalGB -gt 0 -and $memory.usedGB -ge 0 -and $memory.freeGB -ge 0)) {
+    Write-Fail "Memory 容量不合理：total $($memory.totalGB)、used $($memory.usedGB)、free $($memory.freeGB)"
 }
 
 if ($result.csv.lostRows -ne 0 -or $result.csv.writtenRows -lt 1) {
