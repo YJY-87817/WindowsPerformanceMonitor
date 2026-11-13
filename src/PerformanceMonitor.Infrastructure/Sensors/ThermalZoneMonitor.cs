@@ -102,7 +102,13 @@ public sealed class ThermalZoneMonitor(AppSettings settings, IPdhQueryFactory fa
                     ErrorCode = ErrorCode.DataError,
                     ErrorMessage = string.Create(CultureInfo.InvariantCulture, $"讀取熱區計數器失敗（PDH 0x{temperature.ErrorCode:X8}）"),
                 },
-                PdhReadStatus.NotReady => new TemperatureResult(MonitorStatus.WarmingUp, []),
+                // 溫度是瞬時值（不需兩次取樣），沒有任何執行個體又沒有資料時代表系統有熱區物件但沒有熱區
+                // （Windows CI 的 VM 回傳 PDH 無資料），不是暖機中。
+                PdhReadStatus.NotReady => new TemperatureResult(MonitorStatus.Unavailable, [])
+                {
+                    ErrorCode = ErrorCode.Unavailable,
+                    ErrorMessage = string.Create(CultureInfo.InvariantCulture, $"沒有 ACPI 熱區（PDH 0x{temperature.ErrorCode:X8}）"),
+                },
                 _ => new TemperatureResult(MonitorStatus.Unavailable, []) { ErrorCode = ErrorCode.Unavailable, ErrorMessage = "沒有 ACPI 熱區" },
             };
         }

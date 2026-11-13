@@ -25,9 +25,9 @@
 | 磁碟 I/O | PDH `\LogicalDisk(*)\…`、`\PhysicalDisk(*)\…`（萬用字元，英文名稱加入） | 一般使用者 | 第一次 `WarmingUp`；固定磁碟沒有計數器資料 `Unavailable`；讀取失敗 `Error`；無 pdh.dll `Unavailable` | Windows CI Passed（C:、D: 與實體磁碟 0、1）；繁體中文、USB 插拔、RAID／儲存空間 Not Tested |
 | NVIDIA GPU | `nvidia-smi`（只找 `C:\Windows\System32`，再找 `%ProgramFiles%\NVIDIA Corporation\NVSMI`；不搜尋 PATH） | 一般使用者 | 找不到工具或沒有裝置 `Unavailable`；逾時 `Error`／`Timeout`；格式錯誤 `Error`／`DataError` | Windows CI Skipped（沒有 NVIDIA GPU；已驗證找不到工具時為 `Unavailable`）；實機 Not Tested |
 | AMD／Intel GPU | 不支援 | — | `Unavailable` | — |
-| 網路 | Win32 `GetIfTable2`（盤點 M7 確認） | 一般使用者 | 沒有符合的介面卡 `Unavailable`；指定的介面卡未連線或找不到 `Unavailable`；查詢失敗 `Error` | Windows CI Passed（CI 網卡皆為 Hyper-V，預設篩選下為 Unavailable；`includeNames = ["*"]` 時 10 張中 4 張 OK、有合計速度，但 CI 幾乎無流量，非 0 速度未實測）；Wi-Fi、USB 網卡、VPN 實機 Not Tested |
+| 網路 | Win32 `GetIfTable2`（盤點 M7 確認） | 一般使用者 | 沒有符合的介面卡 `Unavailable`；指定的介面卡未連線或找不到 `Unavailable`；查詢失敗 `Error` | Windows CI Passed（CI 網卡皆為 Hyper-V，預設篩選下為 Unavailable；`includeNames = ["*"]` 時 10 張中 4 張 OK、有合計速度；Phase 2-8 的 CI 觀察到非 0 速度 0.12 / 0.05 Mbps，數值正確性仍待實機與工作管理員比對）；Wi-Fi、USB 網卡、VPN 實機 Not Tested |
 | 程序 | `Process.GetProcesses()` | 一般使用者；系統程序的啟動時間常無法讀取 | 略過該程序或欄位並計數，狀態仍 OK | Linux 開發環境 Passed（真實程序）；Windows CI Passed（Top 5） |
-| ACPI 熱區 | PDH `\Thermal Zone Information(*)\High Precision Temperature`（0.1 K），沒有時 `Temperature`（K） | 一般使用者 | 沒有熱區 `Unavailable`；溫度不合理 `Error` | Windows CI：見 Phase 2-8 PR 結果；有熱區的筆電、Windows 10 Not Tested |
+| ACPI 熱區 | PDH `\Thermal Zone Information(*)\High Precision Temperature`（0.1 K），沒有時 `Temperature`（K） | 一般使用者 | 沒有熱區 `Unavailable`；溫度不合理 `Error` | Windows CI：見 Phase 2-8 PR 結果（CI 的 VM 有熱區物件但沒有熱區，預期 Unavailable）；有熱區的筆電、Windows 10 Not Tested |
 
 ### 2.1 已知限制
 

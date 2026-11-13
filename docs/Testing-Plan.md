@@ -162,7 +162,7 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | 項目 | 環境 | 結果 |
 |---|---|---|
 | Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
-| 單元測試：優先高精度（0.1 K）、沒有高精度計數器或讀不到時改用 K、熱區排序與各自獨立、不合理溫度、暖機、沒有熱區、整組讀取失敗、加入兩個計數器、沒有熱區物件時 Unavailable 並重試、PDH 失敗後重建、無 pdh.dll、啟動 Log 說明、文字輸出 | 同上 | Passed（337 個） |
+| 單元測試：優先高精度（0.1 K）、沒有高精度計數器或讀不到時改用 K、熱區排序與各自獨立、不合理溫度、暖機、沒有熱區、有物件但無資料時為 Unavailable（不是暖機）、整組讀取失敗、加入兩個計數器、沒有熱區物件時 Unavailable 並重試、PDH 失敗後重建、無 pdh.dll、啟動 Log 說明、文字輸出 | 同上 | Passed（338 個） |
 | Cli `--once` 端對端（Temperature Unavailable、TemperatureMetrics 狀態列、啟動 Log） | 同上 | Passed |
-| Smoke Test（熱區為 OK 或 Unavailable、TemperatureMetrics CSV） | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test（熱區為 OK 或 Unavailable、TemperatureMetrics CSV） | Windows CI | 第一次 Failed：VM 有熱區物件但沒有熱區，PDH 回傳無資料，被誤判為 WarmingUp；修正為 Unavailable 後見 PR 的 CI 結果。同一次 CI 網路 `includeNames = ["*"]` 觀察到非 0 速度 0.12 / 0.05 Mbps |
 | 有 ACPI 熱區的筆電、固定值的桌上型電腦、Windows 10 | 實機 | Not Tested |

@@ -206,7 +206,7 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 計數器（2026-11-13 確認） | 優先 `High Precision Temperature`（0.1 K，Windows 10 起）；不存在或該熱區讀不到時改用 `Temperature`（K） |
 | 數值 | °C = K − 273.15，四捨五入到 0.01；合理範圍 −40～150°C，超出為該熱區 `Error`／`DataError` |
 | 識別 | PDH 執行個體名稱（例如 `\_TZ.THM0`），依名稱排序 |
-| 無法使用 | 系統沒有 Thermal Zone Information 物件或沒有任何熱區 → `Unavailable`（每次取樣重試）；PDH 失敗 → `Error`／`TransientError` 並重建查詢；無 pdh.dll → `Unavailable` |
+| 無法使用 | 系統沒有 Thermal Zone Information 物件、沒有任何熱區，或有物件但沒有熱區而 PDH 回傳無資料（Windows CI 的 VM 即是如此；溫度是瞬時值，不視為暖機）→ `Unavailable`（每次取樣重試）；PDH 失敗 → `Error`／`TransientError` 並重建查詢；無 pdh.dll → `Unavailable` |
 | 固定值（2026-11-13 確認） | 不偵測；許多桌上型電腦回報固定值（例如一直是 27.8°C）。規格、相容性文件與 WPF 畫面標示「ACPI 熱區不是 CPU 溫度，部分電腦回報固定值」 |
 | 紀錄 | TemperatureMetrics（`SensorType = AcpiThermalZone`）；畫面與報告一律稱「ACPI 熱區」，不得稱為 CPU 溫度 |
 

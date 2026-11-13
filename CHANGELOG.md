@@ -6,7 +6,7 @@
 
 ### Phase 2-8（2026-11-13）：ACPI 熱區（Phase 2 資料來源完成）
 
-- 新增 ACPI 熱區溫度：PDH `\Thermal Zone Information(*)`，優先 `High Precision Temperature`（0.1 K），沒有時用 `Temperature`（K）；合理範圍 −40～150°C；沒有熱區時 Unavailable。
+- 新增 ACPI 熱區溫度：PDH `\Thermal Zone Information(*)`，優先 `High Precision Temperature`（0.1 K），沒有時用 `Temperature`（K）；合理範圍 −40～150°C；沒有熱區（含有物件但 PDH 無資料）時 Unavailable。
 - 不偵測固定值；文件與啟動 Log 說明熱區不是 CPU 溫度、部分電腦回報固定值。
 - 主控台文字輸出加入熱區；Smoke Test 檢查熱區與 TemperatureMetrics CSV。
 

@@ -93,6 +93,18 @@ public sealed class ThermalZoneMonitorTests : IDisposable
     }
 
     [Fact]
+    public void NoDataWithoutZonesIsUnavailableNotWarmingUp()
+    {
+        // Windows CI 的 VM：有 Thermal Zone Information 物件但沒有熱區，PdhGetFormattedCounterArray 回傳無資料。
+        TemperatureResult result = ThermalZoneMonitor.Calculate(
+            PdhArrayValue.Empty(PdhReadStatus.NotReady, 0x800007D5), PdhArrayValue.Empty(PdhReadStatus.NotReady, 0x800007D5));
+
+        Assert.Equal(MonitorStatus.Unavailable, result.Status);
+        Assert.Equal(ErrorCode.Unavailable, result.ErrorCode);
+        Assert.Contains("0x800007D5", result.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void FailedArrayWithoutZonesIsError()
     {
         TemperatureResult result = ThermalZoneMonitor.Calculate(null, PdhArrayValue.Empty(PdhReadStatus.Failed, 0xC0000BB9));
