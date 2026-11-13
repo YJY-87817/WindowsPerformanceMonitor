@@ -1,6 +1,6 @@
 # 架構
 
-- 版本：Phase 1b（2026-11-13）
+- 版本：Phase 1c（2026-11-13）
 - 相關決策：[0002 分層架構](decisions/0002-layered-architecture.md)、[0003 依賴套件](decisions/0003-dependencies.md)、[0004 主控台進入點](decisions/0004-cli-entry-point.md)
 
 ## 1. 分層與依賴方向
@@ -74,6 +74,7 @@ builder.Services
 | `CpuResult`、`MemoryResult`、`DiskResult`、`DiskIoResult`、`GpuResult`、`NetworkResult`、`ProcessResult`、`TemperatureResult` | Core | 各模組結果（資料契約）；多裝置模組實作 `IDeviceResult`，裝置為 `DeviceItem` 衍生型別 |
 | `IAppLog` | Core | 專用 Log 服務（Application／Error 兩個檔案） |
 | `IStorageStatus` | Core | CSV 寫入／遺失列數與最近錯誤 |
+| `IAlertProvider`、`AlertView`、`AlertEvent`、`ActiveAlert` | Core | 告警狀態給 UI |
 | `AppSettings` | Core | 設定（各區塊為 record） |
 | `SettingsParser`／`SettingsValidator` | Application | 解析 JSON、檢查型別與範圍，一次列出所有錯誤 |
 | `IntervalSchedule` | Application | 單調時間格點：超時略過錯過的格點、不補跑 |
@@ -84,7 +85,10 @@ builder.Services
 | `StatusLogTracker` | Application | Error Log 去重與 10 分鐘彙總 |
 | `MonitoringLogObserver` | Application | 依快照把模組／裝置狀態交給去重器、記錄 LoopOverrun |
 | `StartupLog` | Application | 啟動資訊寫入 Application Log |
-| `MonitoringSession` | Application | 接上 Log 觀察者、執行主迴圈、寫開始／停止 Log |
+| `AlertConditionEvaluator` | Application | 由快照判斷 CPU／RAM／各磁碟為 Breach、Recovered、Hysteresis 或 Unknown |
+| `AlertStateMachine` | Application | 單一對象的告警狀態轉換 |
+| `AlertService` | Application | 管理所有對象、寫告警 Log、保留最近 5 筆；`IAlertProvider` 實作 |
+| `MonitoringSession` | Application | 接上 Log 觀察者與告警、執行主迴圈、寫開始／停止 Log |
 | `SystemClock`、`HostInfo` | Infrastructure | `IClock`、`IHostInfo` 實作 |
 | `AppDataPaths` | Infrastructure | 根目錄、設定檔路徑、資料／Log 目錄解析 |
 | `SettingsFileLoader` | Infrastructure | 讀取 settings.json（不存在時用預設值） |

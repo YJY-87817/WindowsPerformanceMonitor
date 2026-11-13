@@ -12,6 +12,7 @@
 | 版本 | 日期 | 狀態 | 內容 |
 |---|---|---|---|
 | 2.0 初稿 | 2026-11-13 | 初稿 | 建立文件：範圍、共通規格、資料、告警、平台；依 Phase 0 盤點結果整理 |
+| 2.0 初稿 | 2026-11-13 | Phase 1c | §6 補上告警實作規則 |
 | 2.0 初稿 | 2026-11-13 | Phase 1b | §5 補上 CSV 寫入與 Log 的實作規則；Data-Schema 定為 v1 |
 | 2.0 初稿 | 2026-11-13 | Phase 1a | 盤點建議全部確認；新增 §3.3 取樣流程、§7 設定檔欄位與驗證規則；本機時間欄位只在 SystemMetrics；資料目錄寫不進去時不開始監控 |
 
@@ -118,6 +119,19 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 ## 6. 告警
 
 沿用 v1.5 §6：門檻、持續時間、冷卻、遲滯、狀態機（NORMAL／PENDING／WARNING／COOLDOWN／RECOVERING／RECOVERED）、磁碟 any／all 條件、資料不可用時的行為；告警事件寫入 Application Log。呈現方式改為 WPF（Phase 3）。
+
+**實作規則（Phase 1c）：**
+
+| 項目 | 規則 |
+|---|---|
+| 對象 | `CPU`、`RAM`、每個固定磁碟（`Disk C:`…）各自獨立；快照中不再出現的對象（例如磁碟移除）移除其狀態 |
+| 判斷 | 只有狀態為 OK 且有數值時才判斷：達觸發值為 Breach、達恢復值為 Recovered、其間為 Hysteresis；其他一律 Unknown，不當成高於或低於門檻 |
+| 磁碟條件 | 只設定百分比時只看百分比。`any`：任一條件達低空間即觸發，所有條件達恢復值才恢復；`all`：所有條件達低空間才觸發，任一條件達恢復值即恢復 |
+| 資料不可用 | PENDING 回到 NORMAL；COOLDOWN 維持（不結束、不重新通知）；RECOVERING 回到 COOLDOWN（恢復計時歸零，冷卻計時延續） |
+| 時間 | 單調時間；0 表示立即（達門檻即告警、不冷卻、達恢復值即恢復） |
+| 事件 | 告警（WARN）、冷卻結束後再次通知（WARN，`repeatNotificationAfterCooldown = false` 時不發）、已恢復（INFO），寫入 Application Log，來源 `Alert`，內容含目前數值與門檻 |
+| 畫面資料 | 進行中的告警（COOLDOWN／RECOVERING，含開始時間＝進入 PENDING 的取樣時間）與最近 5 筆事件（新到舊，含恢復）；`alert.enabled = false` 時不評估並標示停用 |
+| 行為限制 | 告警只描述監控結果，不終止程序、不清理檔案、不變更系統設定 |
 
 ## 7. 設定
 

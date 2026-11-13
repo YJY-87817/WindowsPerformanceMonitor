@@ -83,3 +83,12 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | 單元測試：CSV 格式、7 種 CSV 欄位與狀態列、實際寫檔（BOM、標題列只寫一次、本機日期檔名、跨午夜）、檔案鎖定重試與遺失計數、Log 格式與失敗計數、Error Log 去重與 10 分鐘彙總、LoopOverrun 彙總、啟動／停止 Log、目錄可寫入檢查 | 同上 | Passed（151 個） |
 | 以上 | Windows CI | 見 PR 的 CI 結果 |
 | Excel 開啟 CSV 時的鎖定行為 | Windows 實機 | Not Tested（以 FileShare.None 模擬已測） |
+
+### Phase 1c（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：告警狀態機（移植舊版 Pester 案例：持續時間、未滿即回 NORMAL、冷卻與再次通知、不重複通知、遲滯、恢復持續時間、恢復中斷回 COOLDOWN 且冷卻延續、資料不可用、時間為 0）、磁碟 any／all 條件、對象獨立、事件內容與 Log、最近 5 筆、磁碟移除、停用 | 同上 | Passed（183 個） |
+| 以上 | Windows CI | 見 PR 的 CI 結果 |
+| 實際觸發告警 | Windows 實機 | Not Tested（Phase 2 接上資料來源後） |

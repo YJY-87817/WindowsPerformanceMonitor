@@ -1,3 +1,4 @@
+using PerformanceMonitor.Application.Alerts;
 using PerformanceMonitor.Application.Logging;
 using PerformanceMonitor.Application.Monitoring;
 using PerformanceMonitor.Application.Settings;
@@ -25,7 +26,7 @@ public class SessionAndStartupLogTests
         var settings = new AppSettings();
         var monitor = new FakeMonitor("Cpu", _clock) { Throws = new InvalidOperationException("sensor") };
         var engine = new MonitoringEngine(new SampleRunner([monitor], _clock, new FakeHostInfo()), _clock, settings, _store, recorder);
-        return new MonitoringSession(engine, _store, new MonitoringLogObserver(_log, new StatusLogTracker(_log, _clock), _clock), _log, _storage);
+        return new MonitoringSession(engine, _store, new MonitoringLogObserver(_log, new StatusLogTracker(_log, _clock), _clock), new AlertService(settings, _log, _clock), _log, _storage);
     }
 
     [Fact]

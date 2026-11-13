@@ -1,3 +1,4 @@
+using PerformanceMonitor.Application.Alerts;
 using PerformanceMonitor.Application.Logging;
 using PerformanceMonitor.Core.Abstractions;
 using PerformanceMonitor.Core.Common;
@@ -6,13 +7,14 @@ using PerformanceMonitor.Core.Models;
 namespace PerformanceMonitor.Application.Monitoring;
 
 /// <summary>
-/// 一次監控工作階段：接上 Log 觀察者、執行 <see cref="MonitoringEngine"/>、寫停止 Log
+/// 一次監控工作階段：接上 Log 觀察者與告警、執行 <see cref="MonitoringEngine"/>、寫停止 Log
 /// （正常停止含本次 CSV 寫入／遺失列數；未預期例外寫「監控異常結束」與 Error Log 的 InternalError）。
 /// </summary>
 public sealed class MonitoringSession(
     MonitoringEngine engine,
     SnapshotStore store,
     MonitoringLogObserver observer,
+    AlertService alerts,
     IAppLog log,
     IStorageStatus storage)
 {
@@ -21,7 +23,11 @@ public sealed class MonitoringSession(
     /// <summary>執行到取消為止。</summary>
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        void OnSnapshot(object? sender, MonitorSnapshot snapshot) => observer.Observe(snapshot);
+        void OnSnapshot(object? sender, MonitorSnapshot snapshot)
+        {
+            observer.Observe(snapshot);
+            alerts.Observe(snapshot);
+        }
 
         store.SnapshotPublished += OnSnapshot;
         log.Info(Source, "監控開始");
