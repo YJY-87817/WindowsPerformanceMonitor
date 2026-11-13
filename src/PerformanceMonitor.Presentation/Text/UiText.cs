@@ -36,6 +36,24 @@ public static class UiText
     /// <summary>頁面：總覽。</summary>
     public const string OverviewPage = "總覽";
 
+    /// <summary>頁面：即時趨勢。</summary>
+    public const string TrendPage = "即時趨勢";
+
+    /// <summary>頁面：磁碟。</summary>
+    public const string DiskPage = "磁碟";
+
+    /// <summary>頁面：網路。</summary>
+    public const string NetworkPage = "網路";
+
+    /// <summary>頁面：溫度。</summary>
+    public const string TemperaturePage = "溫度";
+
+    /// <summary>頁面：程序。</summary>
+    public const string ProcessPage = "程序";
+
+    /// <summary>ACPI 熱區說明（不得稱為 CPU 溫度）。</summary>
+    public const string ThermalZoneNote = "ACPI 熱區不是 CPU 溫度；部分電腦（特別是桌上型電腦）會一直回報固定值。";
+
     /// <summary>頁面：狀態與錯誤。</summary>
     public const string StatusPage = "狀態與錯誤";
 

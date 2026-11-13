@@ -11,6 +11,7 @@ using PerformanceMonitor.Core.Settings;
 using PerformanceMonitor.Infrastructure;
 using PerformanceMonitor.Infrastructure.Startup;
 using PerformanceMonitor.Infrastructure.Storage;
+using PerformanceMonitor.Presentation.Trends;
 using PerformanceMonitor.Presentation.ViewModels;
 
 namespace PerformanceMonitor.App;
@@ -41,10 +42,13 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton(check.EffectiveSettings);
         builder.Services.AddSingleton(paths);
         builder.Services.AddSingleton(new StartupStatus(check.Errors, check.Settings.Warnings));
+        builder.Services.AddSingleton<TrendHistory>();
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<MainWindow>();
         _host = builder.Build();
 
+        // 先建立趨勢緩衝（訂閱每次取樣），再開始監控，第一筆取樣就會記錄。
+        _host.Services.GetRequiredService<TrendHistory>();
         if (check.CanMonitor)
         {
             MonitoringStartup.WriteStartupLog(_host.Services, GetVersion(), check, paths);

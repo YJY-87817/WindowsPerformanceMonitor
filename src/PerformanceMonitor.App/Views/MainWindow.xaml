@@ -13,6 +13,21 @@
         <DataTemplate DataType="{x:Type vm:StatusViewModel}">
             <views:StatusView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TrendViewModel}">
+            <views:TrendView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DiskViewModel}">
+            <views:DiskView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:NetworkViewModel}">
+            <views:NetworkView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TemperatureViewModel}">
+            <views:TemperatureView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProcessViewModel}">
+            <views:ProcessView />
+        </DataTemplate>
     </Window.Resources>
 
     <DockPanel>

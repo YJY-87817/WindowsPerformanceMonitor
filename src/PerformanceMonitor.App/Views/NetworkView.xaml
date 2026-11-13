@@ -1,0 +1,22 @@
+<UserControl x:Class="PerformanceMonitor.App.Views.NetworkView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:PerformanceMonitor.App.Controls">
+    <StackPanel>
+        <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" />
+        <TextBlock Text="{Binding ModuleStatus}" Foreground="{Binding ModuleKind, Converter={StaticResource StatusBrush}}" Style="{StaticResource ModuleStatus}" />
+        <TextBlock Text="{Binding TotalText}" FontSize="15" Margin="0,0,0,8" />
+        <TextBlock Text="只列出納入統計的介面卡（設定 network.includeNames／excludeNames／physicalOnlyByDefault）；排除的介面卡與原因記錄在啟動 Log。" Style="{StaticResource Secondary}" Margin="0,0,0,6" />
+        <DataGrid ItemsSource="{Binding Adapters}" AutomationProperties.Name="網路介面卡">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="名稱" Binding="{Binding Name}" Width="130" />
+                <DataGridTextColumn Header="描述" Binding="{Binding Description}" Width="200" />
+                <DataGridTextColumn Header="類型" Binding="{Binding Physical}" Width="50" />
+                <DataGridTextColumn Header="下載" Binding="{Binding Download}" Width="100" />
+                <DataGridTextColumn Header="上傳" Binding="{Binding Upload}" Width="100" />
+                <DataGridTemplateColumn Header="狀態" Width="170"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding StatusText}" Foreground="{Binding Kind, Converter={StaticResource StatusBrush}}" Margin="4,2" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                <DataGridTextColumn Header="原因" Binding="{Binding Message}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </StackPanel>
+</UserControl>
