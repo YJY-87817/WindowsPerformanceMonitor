@@ -12,6 +12,7 @@
 | 版本 | 日期 | 狀態 | 內容 |
 |---|---|---|---|
 | 2.0 初稿 | 2026-11-13 | 初稿 | 建立文件：範圍、共通規格、資料、告警、平台；依 Phase 0 盤點結果整理 |
+| 2.0 初稿 | 2026-11-13 | Phase 2-8 | §4.8 ACPI 熱區（優先高精度計數器；不偵測固定值） |
 | 2.0 初稿 | 2026-11-13 | Phase 2-7 | §4.7 網路（GetIfTable2 欄位對應） |
 | 2.0 初稿 | 2026-11-13 | Phase 2-6 | §4.6 NVIDIA GPU；nvidia-smi 只在固定位置尋找（不搜尋 PATH） |
 | 2.0 初稿 | 2026-11-13 | Phase 2-5 | §4.5 磁碟 I/O（邏輯磁碟加實體磁碟） |
@@ -196,6 +197,18 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 失敗 | `GetIfTable2` 失敗 → `Error`／`TransientError`，保留基準，恢復後以實際經過時間繼續計算；沒有任何符合的介面卡 → `Unavailable` |
 | 啟動 Log | 記錄篩選結果：納入的介面卡與排除的介面卡及原因（篩選層與回送介面不列出） |
 | 說明 | 顯示的是介面卡流量，不代表單一應用程式流量；同時納入實體與虛擬介面卡時合計可能重複計算 |
+
+### 4.8 ACPI 熱區（Phase 2-8）
+
+| 項目 | 規格 |
+|---|---|
+| 來源 | PDH `\Thermal Zone Information(*)`（英文名稱加入，一般使用者可讀）；不使用需要系統管理員權限的 WMI `MSAcpi_ThermalZoneTemperature` |
+| 計數器（2026-11-13 確認） | 優先 `High Precision Temperature`（0.1 K，Windows 10 起）；不存在或該熱區讀不到時改用 `Temperature`（K） |
+| 數值 | °C = K − 273.15，四捨五入到 0.01；合理範圍 −40～150°C，超出為該熱區 `Error`／`DataError` |
+| 識別 | PDH 執行個體名稱（例如 `\_TZ.THM0`），依名稱排序 |
+| 無法使用 | 系統沒有 Thermal Zone Information 物件、沒有任何熱區，或有物件但沒有熱區而 PDH 回傳無資料（Windows CI 的 VM 即是如此；溫度是瞬時值，不視為暖機）→ `Unavailable`（每次取樣重試）；PDH 失敗 → `Error`／`TransientError` 並重建查詢；無 pdh.dll → `Unavailable` |
+| 固定值（2026-11-13 確認） | 不偵測；許多桌上型電腦回報固定值（例如一直是 27.8°C）。規格、相容性文件與 WPF 畫面標示「ACPI 熱區不是 CPU 溫度，部分電腦回報固定值」 |
+| 紀錄 | TemperatureMetrics（`SensorType = AcpiThermalZone`）；畫面與報告一律稱「ACPI 熱區」，不得稱為 CPU 溫度 |
 
 ## 5. 資料與 Log
 

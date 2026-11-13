@@ -14,7 +14,7 @@
 | 4 | Unit Test | `dotnet test`（含覆蓋率） | 任何測試失敗 |
 | 5 | Build Check | `dotnet publish -r win-x64 --self-contained`（App、Cli） | 無法發行 |
 | 6 | Git Diff Check | `tools/diff-check.sh` | 空白錯誤、合併衝突標記、提交了 CSV／Log 或 Data／Logs 資料夾 |
-| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU 或網路（預設篩選）為 Error（OK 或 Unavailable 才通過）、`includeNames = ["*"]` 時網路不是 OK 或沒有合計速度、NetworkMetrics CSV 缺該次 SampleId、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU／GPU／網路來源／單次取樣完成 |
+| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe`（pwsh） | `--self-check` 失敗；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU、網路（預設篩選）或 ACPI 熱區為 Error（OK 或 Unavailable 才通過）、熱區溫度超出 −40～150°C、`includeNames = ["*"]` 時網路不是 OK 或沒有合計速度、NetworkMetrics CSV 缺該次 SampleId、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics／TemperatureMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU／GPU／網路／ACPI 熱區來源／單次取樣完成 |
 
 之後每加入一個資料來源，Smoke Test 就加上該模組的檢查。
 
@@ -154,5 +154,15 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：移植舊版 Pester 網路案例（預設只納入連線中實體介面卡、虛擬關鍵字、physicalOnlyByDefault、includeNames 萬用字元與大小寫、excludeNames 優先、第一次不顯示 0、Mbps 計算、真正的 0、計數器變小、識別改變、1.1 倍尖峰、無連線速度、經過時間為 0、合計只含 OK、無符合介面卡、指定介面卡未連線／找不到、重新連線、暖機、查詢失敗保留基準、停用）、篩選層與回送介面一律排除、MIB_IF_ROW2 結構大小與欄位位移、啟動 Log 篩選結果、文字輸出 | 同上 | Passed（320 個） |
 | Cli `--once` 端對端（Network Unavailable、NetworkMetrics 狀態列、啟動 Log） | 同上 | Passed |
-| Smoke Test（預設篩選不為 Error；`includeNames = ["*"]` 時 OK 且有合計、NetworkMetrics CSV） | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test（預設篩選不為 Error；`includeNames = ["*"]` 時 OK 且有合計、NetworkMetrics CSV） | Windows CI | Passed（預設篩選 Unavailable；`*` 時 4 / 10 張 OK，合計 0.00 / 0.00 Mbps——CI 幾乎無流量，非 0 速度未實測） |
 | Wi-Fi、USB 網卡、VPN、斷線重連、與工作管理員比對 | 實機 | Not Tested |
+
+### Phase 2-8（2026-11-13）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：優先高精度（0.1 K）、沒有高精度計數器或讀不到時改用 K、熱區排序與各自獨立、不合理溫度、暖機、沒有熱區、有物件但無資料時為 Unavailable（不是暖機）、整組讀取失敗、加入兩個計數器、沒有熱區物件時 Unavailable 並重試、PDH 失敗後重建、無 pdh.dll、啟動 Log 說明、文字輸出 | 同上 | Passed（338 個） |
+| Cli `--once` 端對端（Temperature Unavailable、TemperatureMetrics 狀態列、啟動 Log） | 同上 | Passed |
+| Smoke Test（熱區為 OK 或 Unavailable、TemperatureMetrics CSV） | Windows CI | 第一次 Failed：VM 有熱區物件但沒有熱區，PDH 回傳無資料，被誤判為 WarmingUp；修正為 Unavailable 後見 PR 的 CI 結果。同一次 CI 網路 `includeNames = ["*"]` 觀察到非 0 速度 0.12 / 0.05 Mbps |
+| 有 ACPI 熱區的筆電、固定值的桌上型電腦、Windows 10 | 實機 | Not Tested |

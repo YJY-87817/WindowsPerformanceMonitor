@@ -118,4 +118,17 @@ public class SnapshotFormatterTests
 
         Assert.Contains("Network      OK           Total down 12.35 / up 1.50 Mbps (1 of 2 adapters); Ethernet down 12.35 / up 1.50 Mbps; Wi-Fi Unavailable", text, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Text_ShowsThermalZones()
+    {
+        MonitorSnapshot snapshot = Snapshot with
+        {
+            Results = [new TemperatureResult(MonitorStatus.OK, [new ThermalZoneItem(MonitorStatus.OK, @"\_TZ.THM0", 27.95), new ThermalZoneItem(MonitorStatus.Error, "TZ1", null)])],
+        };
+
+        string text = SnapshotFormatter.ToText(snapshot, Storage());
+
+        Assert.Contains(@"Temperature  OK           \_TZ.THM0 28.0°C; TZ1 Error", text, StringComparison.Ordinal);
+    }
 }

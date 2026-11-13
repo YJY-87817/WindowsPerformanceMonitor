@@ -1,6 +1,6 @@
 # 架構
 
-- 版本：Phase 2-7（2026-11-13）
+- 版本：Phase 2-8（2026-11-13）
 - 相關決策：[0002 分層架構](decisions/0002-layered-architecture.md)、[0003 依賴套件](decisions/0003-dependencies.md)、[0004 主控台進入點](decisions/0004-cli-entry-point.md)
 
 ## 1. 分層與依賴方向
@@ -107,6 +107,7 @@ builder.Services
 | `GpuMonitor` | Infrastructure | NVIDIA GPU（使用率、顯存、溫度） |
 | `INetworkInterfaceSource`、`IfTableSource`、`NetworkMonitor` | Infrastructure | 網路介面卡流量（GetIfTable2；篩選與速度計算為純函式） |
 | `IProcessSource`、`SystemProcessSource`、`ProcessMonitor` | Infrastructure | 程序 RAM Top N |
+| `ThermalZoneMonitor` | Infrastructure | ACPI 熱區溫度（PDH 萬用字元計數器，優先高精度） |
 
 組裝點的啟動順序（Cli `--once` 已使用；App 於 Phase 3 使用）：讀取設定 → 有錯誤時顯示並停止 → `StorageInitializer.Check` 有錯誤時顯示並停止 → 將 `AppSettings` 與各 `IMonitor` 註冊到 DI → 寫啟動 Log → 執行 `MonitoringSession.RunAsync`。
 

@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMonitor, NetworkMonitor>();
         services.AddSingleton<IProcessSource, SystemProcessSource>();
         services.AddSingleton<IMonitor, ProcessMonitor>();
+        services.AddSingleton<IMonitor, ThermalZoneMonitor>();
         return services;
     }
 }
