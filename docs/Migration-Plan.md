@@ -19,7 +19,7 @@
 | M7 | 網路介面卡流量 | §3.6 | CIM `MSFT_NetAdapter*` | 保留，改用 Win32 `GetIfTable2`（已確認） | 有「是否硬體介面卡」旗標與連線速度，篩選結果最接近舊版。欄位對應（Phase 2-7 確認）：Hidden → 篩選層／回送介面一律不列入；實體 → HardwareInterface＋ConnectorPresent＋無虛擬關鍵字；見規格 v2.0 §4.7 | 2 |
 | M8 | 網路篩選規則、合計、速度尖峰 1.1 倍檢查 | §3.6.1 | 見 v1.4 決策 | 保留 | 規則移植為純函式並沿用舊版測試案例 | 2 |
 | M9 | 程序 RAM Top N | §3.7 | `Get-Process`，WorkingSet64 | 保留 | `Process.GetProcesses()`；讀取失敗略過並計數 | 2 |
-| M10 | ACPI 熱區溫度 | — | 舊版無 | 新增（已確認） | PDH `\Thermal Zone Information(*)\Temperature`（K → °C） | 2 |
+| M10 | ACPI 熱區溫度 | — | 舊版無 | 新增（已確認） | PDH `\Thermal Zone Information(*)\High Precision Temperature`，沒有時 `Temperature`（K → °C）；不偵測固定值（Phase 2-8 確認） | 2 |
 
 ## 2. 共通行為
 

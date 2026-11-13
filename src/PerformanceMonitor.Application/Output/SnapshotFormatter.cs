@@ -87,6 +87,9 @@ public static class SnapshotFormatter
                 ? $"{a.AdapterName} down {Number(a.DownloadMbps, "0.00")} / up {Number(a.UploadMbps, "0.00")} Mbps"
                 : $"{a.AdapterName} {a.Status}").Prepend(
                     $"Total down {Number(network.TotalDownloadMbps, "0.00")} / up {Number(network.TotalUploadMbps, "0.00")} Mbps ({network.Adapters.Count(a => a.Status == Core.Enums.MonitorStatus.OK)} of {network.Adapters.Count} adapters)")),
+            TemperatureResult zones => string.Join("; ", zones.Sensors.Select(z => z.Status == Core.Enums.MonitorStatus.OK
+                ? $"{z.SensorName} {Number(z.TemperatureC, "0.0")}°C"
+                : $"{z.SensorName} {z.Status}")),
             ProcessResult process => string.Join(", ", process.Processes.Take(3).Select(p => $"{p.ProcessName} {Number(p.WorkingSetMB, "0.0")} MB")),
             _ => null,
         };

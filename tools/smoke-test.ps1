@@ -8,8 +8,9 @@
      磁碟 I/O 必須為 OK，且至少一個邏輯磁碟與一個實體磁碟為 OK、數值不為負、忙碌率介於 0～100；
      GPU 必須為 OK（數值合理）或 Unavailable（CI 沒有 NVIDIA GPU），不得為 Error；
      網路必須為 OK 或 Unavailable（CI 唯一的網卡是預設排除的 Hyper-V 介面卡），不得為 Error；
-     程序 Top N 為 OK；DiskMetrics、DiskIoMetrics、GpuMetrics、ProcessMetrics CSV 含本次 SampleId；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
-     Application Log 有啟動、CPU、GPU 與網路來源與「單次取樣完成」。
+     ACPI 熱區必須為 OK（溫度 -40～150°C）或 Unavailable（許多電腦與 VM 沒有熱區），不得為 Error；
+     程序 Top N 為 OK；DiskMetrics、DiskIoMetrics、GpuMetrics、ProcessMetrics、TemperatureMetrics CSV 含本次 SampleId；SystemMetrics CSV 有 BOM、標題列且含本次 SampleId；
+     Application Log 有啟動、CPU、GPU、網路與 ACPI 熱區來源與「單次取樣完成」。
   3. （僅 Windows）以 settings.json 設定 network.includeNames = ["*"] 再取樣一次：
      網路必須為 OK 且有合計速度；NetworkMetrics CSV 含該次 SampleId。結束後移除設定檔。
 .PARAMETER Exe
@@ -117,6 +118,20 @@ if ($null -eq $network -or $network.status -notin @('OK', 'Unavailable')) {
     Write-Pass "Network（預設篩選）：$($network.status)，$(@($network.adapters).Count) 張介面卡$(if ($network.errorMessage) { "（$($network.errorMessage)）" })"
 }
 
+$zones = $result.modules | Where-Object module -EQ 'Temperature'
+if ($null -eq $zones -or $zones.status -notin @('OK', 'Unavailable')) {
+    Write-Fail "Temperature 狀態 $($zones.status)、錯誤 [$($zones.errorCode)] $($zones.errorMessage)"
+} elseif ($zones.status -eq 'Unavailable') {
+    Write-Pass "Temperature（ACPI 熱區）：Unavailable（$($zones.errorMessage)）"
+} else {
+    foreach ($z in @($zones.sensors | Where-Object status -EQ 'OK')) {
+        if ($z.temperatureC -lt -40 -or $z.temperatureC -gt 150) {
+            Write-Fail "熱區 $($z.sensorName) 溫度不合理：$($z.temperatureC)"
+        }
+    }
+    Write-Pass "Temperature（ACPI 熱區）：OK，$((@($zones.sensors) | ForEach-Object { "$($_.sensorName) $($_.temperatureC)°C $($_.status)" }) -join '、')"
+}
+
 $process = $result.modules | Where-Object module -EQ 'Process'
 $top = @($process.processes)
 if ($null -eq $process -or $process.status -ne 'OK' -or $top.Count -lt 1 -or $top.Count -gt 5 -or ($top | Where-Object { $_.workingSetMB -lt 0 })) {
@@ -155,7 +170,7 @@ if (-not (Test-Path -LiteralPath $csvPath)) {
     }
 }
 
-foreach ($table in @('DiskMetrics', 'DiskIoMetrics', 'GpuMetrics', 'ProcessMetrics')) {
+foreach ($table in @('DiskMetrics', 'DiskIoMetrics', 'GpuMetrics', 'ProcessMetrics', 'TemperatureMetrics')) {
     $path = Join-Path $root "Data\$($table)_v1_$date.csv"
     if (-not (Test-Path -LiteralPath $path) -or -not ([System.IO.File]::ReadAllLines($path) | Where-Object { $_.StartsWith("$($result.sampleId),") })) {
         Write-Fail "$table CSV 不存在或沒有本次 SampleId：$path"
@@ -169,13 +184,13 @@ if (-not (Test-Path -LiteralPath $logPath)) {
     Write-Fail "找不到 $logPath"
 } else {
     $log = Get-Content -LiteralPath $logPath -Encoding utf8
-    foreach ($expected in @('[Startup] Windows Performance Monitor', '[Startup] CPU 來源：PDH', '[Startup] GPU 來源：nvidia-smi', '[Startup] 網路來源：Win32 GetIfTable2；', '[Monitor] 單次取樣完成')) {
+    foreach ($expected in @('[Startup] Windows Performance Monitor', '[Startup] CPU 來源：PDH', '[Startup] GPU 來源：nvidia-smi', '[Startup] 網路來源：Win32 GetIfTable2；', '[Startup] ACPI 熱區來源：PDH', '[Monitor] 單次取樣完成')) {
         if (-not ($log | Where-Object { $_.Contains($expected) })) {
             Write-Fail "Application Log 缺少「$expected」"
         }
     }
     if (-not $script:Failed) {
-        Write-Pass 'Application Log：啟動、CPU／GPU／網路來源、單次取樣完成'
+        Write-Pass 'Application Log：啟動、CPU／GPU／網路／ACPI 熱區來源、單次取樣完成'
     }
 }
 
