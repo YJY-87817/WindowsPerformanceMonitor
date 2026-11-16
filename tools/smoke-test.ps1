@@ -355,7 +355,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Fail "report 沒有產生報告檔：$reportPath"
 } else {
     $html = [System.IO.File]::ReadAllText($reportPath)
-    $missing = @('<!DOCTYPE html>', 'Content-Security-Policy', '統計摘要', '<h3>CPU</h3>', '資料品質', '監控時段') | Where-Object { -not $html.Contains($_) }
+    $missing = @('<!DOCTYPE html>', 'Content-Security-Policy', '統計摘要', '<h3>CPU</h3>', '<h2>趨勢</h2>', '<svg', '尖峰時段', '告警事件', '高記憶體程序', '資料品質', '監控時段') | Where-Object { -not $html.Contains($_) }
     if ($missing.Count -gt 0) {
         Write-Fail "報告缺少內容：$($missing -join '、')"
     } elseif ($html -match '<script|https?://') {

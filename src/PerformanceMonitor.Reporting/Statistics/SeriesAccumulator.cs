@@ -3,11 +3,41 @@ using PerformanceMonitor.Reporting.Model;
 
 namespace PerformanceMonitor.Reporting.Statistics;
 
+/// <summary>指標在趨勢圖與尖峰時段中的角色。</summary>
+public enum SeriesRole
+{
+    /// <summary>只出現在統計摘要。</summary>
+    None,
+
+    /// <summary>CPU 使用率。</summary>
+    CpuUsage,
+
+    /// <summary>記憶體使用率。</summary>
+    MemoryUsage,
+
+    /// <summary>邏輯磁碟忙碌率。</summary>
+    LogicalDiskBusy,
+
+    /// <summary>網路合計下載。</summary>
+    NetworkDownload,
+
+    /// <summary>網路合計上傳。</summary>
+    NetworkUpload,
+
+    /// <summary>GPU 使用率。</summary>
+    GpuUsage,
+
+    /// <summary>溫度（GPU 或 ACPI 熱區）。</summary>
+    Temperature,
+}
+
 /// <summary>一個指標（一條數列）的識別。</summary>
 /// <param name="Group">分組，例如 <c>CPU</c>、<c>磁碟 I/O</c>。</param>
 /// <param name="Name">名稱，例如 <c>使用率</c>、<c>C: 忙碌</c>。</param>
 /// <param name="Unit">單位，例如 <c>%</c>、<c>MB/s</c>。</param>
-public sealed record SeriesKey(string Group, string Name, string Unit);
+/// <param name="Role">趨勢圖與尖峰時段的角色。</param>
+/// <param name="Device">裝置名稱（圖例與尖峰時段標示哪一個裝置），例如 <c>C:</c>、<c>GPU 0 RTX 4060</c>。</param>
+public sealed record SeriesKey(string Group, string Name, string Unit, SeriesRole Role = SeriesRole.None, string? Device = null);
 
 /// <summary>趨勢圖的一個時段：該時段有效值的平均與最大。</summary>
 /// <param name="Average">平均。</param>

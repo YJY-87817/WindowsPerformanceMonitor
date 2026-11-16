@@ -14,6 +14,10 @@ namespace PerformanceMonitor.Application.Reports;
 public sealed class ReportDataReader(IReportStore store)
 {
     private const string MonitorSource = "Monitor";
+    private const string AlertSource = "Alert";
+    private const string RepeatPrefix = "告警持續（冷卻結束後再次通知） ";
+    private const string WarningPrefix = "告警 ";
+    private const string RecoveredPrefix = "已恢復 ";
 
     /// <summary>讀取並交給 <paramref name="builder"/>。</summary>
     public void Read(ReportPeriod period, ReportBuilder builder)
@@ -53,6 +57,38 @@ public sealed class ReportDataReader(IReportStore store)
             : null;
     }
 
+    /// <summary>
+    /// 解析告警事件訊息：<c>告警 CPU：目前 95%，門檻 90%</c>、<c>告警持續（冷卻結束後再次通知） …</c>、<c>已恢復 …</c>
+    /// （AlertService 的寫法）；不是告警事件或格式不符時回傳 null。
+    /// </summary>
+    public static AlertLogEvent? ParseAlert(LogLine line)
+    {
+        ArgumentNullException.ThrowIfNull(line);
+        if (!string.Equals(line.Source, AlertSource, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        string m = line.Message;
+        (AlertLogKind kind, string rest) = m.StartsWith(RepeatPrefix, StringComparison.Ordinal) ? (AlertLogKind.Repeat, m[RepeatPrefix.Length..])
+            : m.StartsWith(WarningPrefix, StringComparison.Ordinal) ? (AlertLogKind.Warning, m[WarningPrefix.Length..])
+            : m.StartsWith(RecoveredPrefix, StringComparison.Ordinal) ? (AlertLogKind.Recovered, m[RecoveredPrefix.Length..])
+            : (AlertLogKind.Warning, string.Empty);
+        int valueStart = rest.IndexOf("：目前 ", StringComparison.Ordinal);
+        int thresholdStart = rest.LastIndexOf("，門檻 ", StringComparison.Ordinal);
+        if (rest.Length == 0 || valueStart <= 0 || thresholdStart < valueStart)
+        {
+            return null;
+        }
+
+        return new AlertLogEvent(
+            line.Time,
+            kind,
+            rest[..valueStart],
+            rest[(valueStart + "：目前 ".Length)..thresholdStart],
+            rest[(thresholdStart + "，門檻 ".Length)..]);
+    }
+
     private bool ReadLog(DateOnly date, ReportBuilder builder)
     {
         string name = ReportCsvFile.ApplicationLogName(date);
@@ -67,9 +103,18 @@ public sealed class ReportDataReader(IReportStore store)
         {
             foreach (string text in lines)
             {
-                if (LogLineParser.Parse(text) is LogLine line && SessionEvent(line) is SessionEventKind kind)
+                if (LogLineParser.Parse(text) is not LogLine line)
+                {
+                    continue;
+                }
+
+                if (SessionEvent(line) is SessionEventKind kind)
                 {
                     builder.AddSessionEvent(line.Time, kind);
+                }
+                else if (ParseAlert(line) is AlertLogEvent alert)
+                {
+                    builder.AddAlertEvent(alert);
                 }
             }
         }
@@ -96,6 +141,7 @@ public sealed class ReportDataReader(IReportStore store)
                 "DiskIoMetrics" => row => DiskIo(row, builder),
                 "GpuMetrics" => row => Gpu(row, builder),
                 "NetworkMetrics" => network.Add,
+                "ProcessMetrics" => row => Process(row, builder),
                 _ => row => Temperature(row, builder),
             };
 
@@ -228,12 +274,12 @@ public sealed class ReportDataReader(IReportStore store)
 
         if (cpu is MonitorStatus c)
         {
-            builder.AddMetric(new SeriesKey(ReportGroups.Cpu, "使用率", "%"), time, cpuPercent, c);
+            builder.AddMetric(new SeriesKey(ReportGroups.Cpu, "使用率", "%", SeriesRole.CpuUsage, "CPU"), time, cpuPercent, c);
         }
 
         if (memory is MonitorStatus m)
         {
-            builder.AddMetric(new SeriesKey(ReportGroups.Memory, "使用率", "%"), time, memoryPercent, m);
+            builder.AddMetric(new SeriesKey(ReportGroups.Memory, "使用率", "%", SeriesRole.MemoryUsage, "記憶體"), time, memoryPercent, m);
             builder.AddMetric(new SeriesKey(ReportGroups.Memory, "已用", "GB"), time, memoryUsed, m);
         }
     }
@@ -277,7 +323,8 @@ public sealed class ReportDataReader(IReportStore store)
         };
         foreach ((string name, string unit, double? value) in metrics)
         {
-            builder.AddMetric(new SeriesKey(ReportGroups.DiskIo, $"{label} {name}", unit), time, value, status);
+            SeriesRole role = scope == "Logical" && name == "忙碌" ? SeriesRole.LogicalDiskBusy : SeriesRole.None;
+            builder.AddMetric(new SeriesKey(ReportGroups.DiskIo, $"{label} {name}", unit, role, label), time, value, status);
         }
     }
 
@@ -294,8 +341,20 @@ public sealed class ReportDataReader(IReportStore store)
         }
 
         string label = $"GPU {index} {row.Text("GpuName")}".TrimEnd();
-        builder.AddMetric(new SeriesKey(ReportGroups.Gpu, $"{label} 使用率", "%"), time, usage, status);
+        builder.AddMetric(new SeriesKey(ReportGroups.Gpu, $"{label} 使用率", "%", SeriesRole.GpuUsage, label), time, usage, status);
         builder.AddMetric(new SeriesKey(ReportGroups.Gpu, $"{label} 顯存已用", "MB"), time, memory, status);
+    }
+
+    private static void Process(CsvRow row, ReportBuilder builder)
+    {
+        row.Time("TimestampUtc");
+        MonitorStatus status = row.Status("Status");
+        double? workingSet = row.Number("WorkingSetMB");
+        string name = row.Text("ProcessName");
+        if (status == MonitorStatus.OK && name.Length > 0 && workingSet is double mb)
+        {
+            builder.AddProcess(row.Text("SampleId"), name, mb);
+        }
     }
 
     private static void Temperature(CsvRow row, ReportBuilder builder)
@@ -313,15 +372,15 @@ public sealed class ReportDataReader(IReportStore store)
         string sensor = row.Text("SensorName");
         if (sensor.Length > 0)
         {
-            builder.AddMetric(new SeriesKey(group, sensor, "°C"), time, celsius, status);
+            builder.AddMetric(new SeriesKey(group, sensor, "°C", SeriesRole.Temperature, sensor), time, celsius, status);
         }
     }
 
     /// <summary>網路：各介面卡一列，同一次取樣（相同 SampleId，連續寫入）的 OK 介面卡相加為合計。</summary>
     private sealed class NetworkTotals(ReportBuilder builder)
     {
-        private static readonly SeriesKey Download = new(ReportGroups.Network, "合計下載", "Mbps");
-        private static readonly SeriesKey Upload = new(ReportGroups.Network, "合計上傳", "Mbps");
+        private static readonly SeriesKey Download = new(ReportGroups.Network, "合計下載", "Mbps", SeriesRole.NetworkDownload, "下載");
+        private static readonly SeriesKey Upload = new(ReportGroups.Network, "合計上傳", "Mbps", SeriesRole.NetworkUpload, "上傳");
         private string? _sampleId;
         private DateTimeOffset _time;
         private double _download;

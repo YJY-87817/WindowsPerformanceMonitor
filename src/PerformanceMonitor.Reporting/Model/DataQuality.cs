@@ -65,7 +65,7 @@ public enum SessionEventKind
 /// <param name="End">結束。</param>
 /// <param name="EndKind">結束方式。</param>
 /// <param name="StartedBeforePeriod">是否在期間之前就已開始。</param>
-/// <param name="ExpectedSamples">預期 CSV 紀錄筆數：⌊時長 ÷ CSV 間隔⌋ ＋ 1（開始時與停止時各寫一筆）。</param>
+/// <param name="ExpectedSamples">預期 CSV 紀錄筆數：⌈時長 ÷ CSV 間隔⌉ ＋ 1（開始時寫一筆、之後每個間隔一筆、停止時補寫最後一筆）。</param>
 public sealed record MonitoringSpan(DateTimeOffset Start, DateTimeOffset End, SessionEnd EndKind, bool StartedBeforePeriod, int ExpectedSamples);
 
 /// <summary>一個模組在 SystemMetrics 中的狀態分布。</summary>
@@ -110,10 +110,16 @@ public sealed record DataQuality(
 /// <param name="ComputerNames">資料中的電腦名稱。</param>
 /// <param name="Series">各指標統計，依分組與名稱排序。</param>
 /// <param name="Quality">資料品質。</param>
+/// <param name="Peaks">尖峰時段（沒有資料的指標不列）。</param>
+/// <param name="Alerts">告警事件。</param>
+/// <param name="Processes">高記憶體程序統計。</param>
 public sealed record ReportModel(
     ReportPeriod Period,
     ReportTimeline Timeline,
     DateTimeOffset GeneratedAt,
     IReadOnlyList<string> ComputerNames,
     IReadOnlyList<SeriesStatistics> Series,
-    DataQuality Quality);
+    DataQuality Quality,
+    IReadOnlyList<PeakList> Peaks,
+    AlertReport Alerts,
+    ProcessReport Processes);
