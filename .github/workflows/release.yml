@@ -1,0 +1,86 @@
+name: Release
+
+# 推 v* tag 時建立「草稿」GitHub Release（決策 0009）：檢查 tag 與 Directory.Build.props 的版本一致，
+# 建置、測試、打包（單一檔案 zip ＋ SHA-256）、Smoke Test，版本說明取 CHANGELOG 該版本的段落。
+# tag 含「-」（例如 v2.0.0-rc.1）時標為預覽版。草稿由負責人確認後發布。
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  CONFIGURATION: Release
+
+jobs:
+  release:
+    name: 建立草稿 Release
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v5
+
+      - name: 安裝 .NET SDK（版本依 global.json）
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: 檢查版本與版本說明
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          [xml] $props = Get-Content -LiteralPath Directory.Build.props -Raw
+          $version = ($props.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ } | Select-Object -First 1)
+          if ("v$version" -cne $env:TAG) { throw "tag $env:TAG 與 Directory.Build.props 的版本 $version 不一致" }
+          $lines = Get-Content -LiteralPath CHANGELOG.md -Encoding utf8
+          $start = [array]::FindIndex([string[]]$lines, [Predicate[string]] { param($l) $l -match "^## \[$([regex]::Escape($version))\]" })
+          if ($start -lt 0) { throw "CHANGELOG.md 沒有「## [$version]」段落" }
+          $end = [array]::FindIndex([string[]]$lines, $start + 1, [Predicate[string]] { param($l) $l -match '^## \[' })
+          $section = if ($end -lt 0) { $lines[($start + 1)..($lines.Count - 1)] } else { $lines[($start + 1)..($end - 1)] }
+          Set-Content -LiteralPath release-notes.md -Value ($section -join "`n").Trim() -Encoding utf8NoBOM
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: 建置與測試
+        run: |
+          dotnet build -c $env:CONFIGURATION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet test -c $env:CONFIGURATION --no-build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: 打包
+        run: ./tools/package.ps1 -Configuration $env:CONFIGURATION -PublishDirectory publish -OutputDirectory artifacts
+
+      - name: Smoke Test（發行檔）
+        run: ./tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe -App publish/App/PerformanceMonitor.exe
+
+      - name: 建立草稿 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          $zip = "artifacts/WindowsPerformanceMonitor-$env:VERSION-win-x64.zip"
+          $sums = Get-Content -LiteralPath artifacts/SHA256SUMS.txt -Raw
+          $notes = @(
+              (Get-Content -LiteralPath release-notes.md -Raw).Trim()
+              ''
+              '## 下載與驗證'
+              ''
+              "- 解壓縮後執行 ``PerformanceMonitor.exe``（WPF）；主控台為 ``PerformanceMonitor.Cli.exe``。需要 Windows 10 22H2 或 Windows 11（x64），不需另外安裝 .NET。"
+              '- 程式沒有數位簽章：Windows SmartScreen 若顯示「Windows 已保護您的電腦」，請按「其他資訊」→「仍要執行」。'
+              '- SHA-256（可用 PowerShell ``Get-FileHash`` 核對）：'
+              ''
+              '```text'
+              $sums.Trim()
+              '```'
+          ) -join "`n"
+          Set-Content -LiteralPath release-body.md -Value $notes -Encoding utf8NoBOM
+          $prerelease = if ($env:TAG.Contains('-')) { @('--prerelease') } else { @() }
+          gh release create $env:TAG $zip artifacts/SHA256SUMS.txt --draft --verify-tag --title "Windows Performance Monitor $env:VERSION" --notes-file release-body.md @prerelease
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

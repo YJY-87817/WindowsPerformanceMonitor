@@ -9,10 +9,10 @@
 |---|---|---|
 | Windows 11 | 主要開發與驗收平台 | Not Tested（Phase 0 只在 CI 的 Windows Server 建置與執行 `--self-check`） |
 | Windows 10 22H2 | 相容性測試平台 | Not Tested |
-| .NET 10 支援 Windows 10 22H2 | .NET 10 官方支援作業系統清單（dotnet/core `release-notes/10.0/supported-os.md`）列有 Windows 10 22H2；但 Windows 10 一般支援已於 2025-10-14 結束，發行前需再查核官方清單 | 待查核（Phase 5） |
-| CPU 架構 | win-x64 | ARM64 於 Phase 5 評估 |
+| .NET 10 支援 Windows 10 22H2 | .NET 10 官方支援作業系統清單（dotnet/core `release-notes/10.0/supported-os.md`）列有 Windows 10 22H2（2026-11-16 依 dotnet/core 的變更內容查得）；Windows 10 一般支援已於 2025-10-14 結束，.NET 支援需系統安裝最新更新。發布 Release 前請再開啟該清單核對 | 已查核（發布前再核對） |
+| CPU 架構 | 只發行 win-x64（決策 0009）；Windows 11 ARM 以 x64 模擬執行 | ARM64 Not Tested |
 | 權限 | 一般使用者；不要求系統管理員 | — |
-| .NET Runtime | self-contained，隨程式發行，不需另外安裝 | — |
+| .NET Runtime | self-contained 單一檔案（壓縮），隨程式發行，不需另外安裝；原生元件第一次執行時解壓縮到 `%TEMP%\.net` | Windows CI Passed（Smoke Test 使用單一檔案發行檔，5b 起） |
 | 網路 | 不需要網際網路 | — |
 
 ## 2. 資料來源
