@@ -1,0 +1,53 @@
+<UserControl x:Class="PerformanceMonitor.App.Views.ReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" />
+        <TextBlock Text="{Binding Notice}" Style="{StaticResource Secondary}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="起日" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <DatePicker SelectedDate="{Binding From, UpdateSourceTrigger=PropertyChanged}" Width="140" AutomationProperties.Name="起日" SelectedDateFormat="Short" />
+                    <TextBlock Text="訖日" VerticalAlignment="Center" Margin="16,0,6,0" />
+                    <DatePicker SelectedDate="{Binding To, UpdateSourceTrigger=PropertyChanged}" Width="140" AutomationProperties.Name="訖日" SelectedDateFormat="Short" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="今天" Command="{Binding TodayCommand}" Margin="0" AutomationProperties.Name="今天" />
+                    <Button Content="昨天" Command="{Binding YesterdayCommand}" AutomationProperties.Name="昨天" />
+                    <Button Content="最近 7 天" Command="{Binding Last7DaysCommand}" AutomationProperties.Name="最近 7 天" />
+                    <Button Content="最近 30 天" Command="{Binding Last30DaysCommand}" AutomationProperties.Name="最近 30 天" />
+                </StackPanel>
+                <TextBlock Text="{Binding PeriodText}" Style="{StaticResource Secondary}" />
+                <TextBlock Text="{Binding PeriodError}" Foreground="{StaticResource ErrorBrush}" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <Button Content="產生報告(_G)" Command="{Binding GenerateCommand}" Margin="0" AutomationProperties.Name="產生報告" />
+            <Button Content="開啟報告(_O)" Command="{Binding OpenReportCommand}" AutomationProperties.Name="開啟報告" />
+            <Button Content="開啟資料夾(_F)" Command="{Binding OpenFolderCommand}" AutomationProperties.Name="開啟資料夾" />
+        </StackPanel>
+        <ProgressBar IsIndeterminate="True" Height="4" Margin="0,0,0,6"
+                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,0,0,6" AutomationProperties.Name="報告訊息">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsError}" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+        <ItemsControl ItemsSource="{Binding Summary}" Focusable="False">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" Style="{StaticResource Secondary}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

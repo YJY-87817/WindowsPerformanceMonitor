@@ -269,8 +269,8 @@ if ($App) {
                 (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, '頁面')))
             $items = @($nav.FindAll([System.Windows.Automation.TreeScope]::Children,
                 (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem))))
-            if ($items.Count -lt 8) {
-                Write-Fail "WPF 導覽只有 $($items.Count) 個頁面（應有 8 個）"
+            if ($items.Count -lt 9) {
+                Write-Fail "WPF 導覽只有 $($items.Count) 個頁面（應有 9 個）"
             }
             foreach ($item in $items) {
                 $item.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
@@ -281,9 +281,44 @@ if ($App) {
                     break
                 }
             }
-            if (-not $process.HasExited -and $items.Count -ge 8) {
+            if (-not $process.HasExited -and $items.Count -ge 9) {
                 Write-Pass "WPF：依序切換 $($items.Count) 個頁面，程式正常"
             }
+
+            # 報告頁（第 7 頁）：按「今天」與「產生報告」，確認寫出今天的報告（完成後會以預設瀏覽器開啟）。
+            $wpfReport = Join-Path $root "Reports\Report_$date-$date.html"
+            Remove-Item -LiteralPath $wpfReport -ErrorAction SilentlyContinue
+            $items[6].GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+            Start-Sleep -Milliseconds 1000
+            $buttons = @{}
+            foreach ($name in @('今天', '產生報告')) {
+                $buttons[$name] = $window.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+                    (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $name)))
+            }
+            if ($null -eq $buttons['今天'] -or $null -eq $buttons['產生報告']) {
+                Write-Fail 'WPF 報告頁找不到「今天」或「產生報告」按鈕'
+            } else {
+                $buttons['今天'].GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+                $buttons['產生報告'].GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+                $deadline = (Get-Date).AddSeconds(30)
+                while (-not (Test-Path -LiteralPath $wpfReport) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
+                Start-Sleep -Milliseconds 500
+                $process.Refresh()
+                if ($process.HasExited) {
+                    Write-Fail 'WPF 產生報告後程式結束'
+                } elseif (-not (Test-Path -LiteralPath $wpfReport)) {
+                    Write-Fail "WPF 報告頁 30 秒內沒有產生報告：$wpfReport"
+                } elseif (-not ([System.IO.File]::ReadAllText($wpfReport)).Contains('<h2>趨勢</h2>')) {
+                    Write-Fail 'WPF 產生的報告內容不完整'
+                } else {
+                    Write-Pass 'WPF：報告頁產生今天的報告（背景產生、監控照常）'
+                }
+                Remove-Item -LiteralPath $wpfReport -ErrorAction SilentlyContinue
+            }
+
+            # 回到設定頁（最後一頁）。
+            $items[-1].GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+            Start-Sleep -Milliseconds 1000
 
             # 設定頁（最後一頁）：不修改內容，按「儲存並重新啟動」，確認寫出設定檔並重新啟動。
             $settingsPath = Join-Path $root 'settings.json'

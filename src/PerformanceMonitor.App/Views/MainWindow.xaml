@@ -28,6 +28,9 @@
         <DataTemplate DataType="{x:Type vm:ProcessViewModel}">
             <views:ProcessView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ReportViewModel}">
+            <views:ReportView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView />
         </DataTemplate>

@@ -21,7 +21,8 @@ public class ViewModelTests
     public ViewModelTests() => _controller = new MonitoringController(_session);
 
     private MainViewModel Create(StartupStatus? startup = null) =>
-        new(_controller, _snapshots, _alerts, _storage, startup ?? new StartupStatus([], []), new AppSettings(), new TrendHistory(), new FakeSettingsService(), new FakeRestart());
+        new(_controller, _snapshots, _alerts, _storage, startup ?? new StartupStatus([], []), new AppSettings(), new TrendHistory(), new FakeSettingsService(), new FakeRestart(),
+            new ReportViewModel(new FakeReportRunner(), new FakeLauncher(), () => new DateOnly(2026, 11, 16)));
 
     [Fact]
     public void BeforeFirstSampleShowsNoCardsAndCanStart()
@@ -34,7 +35,7 @@ public class ViewModelTests
         Assert.Equal("已停止", vm.StateText);
         Assert.True(vm.CanStart);
         Assert.False(vm.CanStop);
-        Assert.Equal(["總覽", "即時趨勢", "磁碟", "網路", "溫度", "程序", "狀態與錯誤", "設定"], vm.Pages.Select(p => p.Title));
+        Assert.Equal(["總覽", "即時趨勢", "磁碟", "網路", "溫度", "程序", "報告", "狀態與錯誤", "設定"], vm.Pages.Select(p => p.Title));
         Assert.Same(vm.Overview, vm.SelectedPage);
         Assert.False(vm.HasBanner);
     }

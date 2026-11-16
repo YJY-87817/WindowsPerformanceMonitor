@@ -45,6 +45,10 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton(new StartupStatus(check.Errors, check.Settings.Warnings, check.Settings.IsValid));
         builder.Services.AddSingleton<ISettingsService, SettingsFileService>();
         builder.Services.AddSingleton<IApplicationRestart, ApplicationRestart>();
+        builder.Services.AddSingleton<IReportRunner, ReportRunner>();
+        builder.Services.AddSingleton<IShellLauncher, ShellLauncher>();
+        builder.Services.AddSingleton(sp => new ReportViewModel(
+            sp.GetRequiredService<IReportRunner>(), sp.GetRequiredService<IShellLauncher>(), () => DateOnly.FromDateTime(DateTime.Now)));
         builder.Services.AddSingleton<TrendHistory>();
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<MainWindow>();
