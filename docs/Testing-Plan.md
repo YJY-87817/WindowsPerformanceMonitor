@@ -38,6 +38,7 @@ WPF 與 Windows 專屬專案可在 Linux 建置（`EnableWindowsTargeting`），
 | Mock | Windows API、感測器、計數器錯誤（手寫假物件） | 任何平台 |
 | Integration | 模組、排程、CSV、Log、報告 | Windows CI |
 | Smoke | 發行後的 Cli 實際執行 | Windows CI |
+| Stability | `tools/Test-Stability.ps1`：Cli 連續監控 3 分鐘（每次 CI）；Cli 或 WPF 最長 300 分鐘（手動 workflow）；24 小時（實機） | Windows CI／實機 |
 | Manual | 真實 GPU、磁碟、溫度、網路、UI | 實機 |
 
 ## 4. 結果狀態
@@ -221,5 +222,16 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 |---|---|---|
 | Release 建置（含 WPF XAML 編譯）、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：報告頁預設今天、快速期間（昨天、最近 7／30 天）與期間說明；起日晚於訖日、超過 366 天、未選日期不可產生；背景產生中不可重複、完成後開啟報告與資料夾、摘要；寫入失敗顯示原因且可重試；開啟失敗保留路徑；導覽 9 頁順序 | 同上 | Passed（512 個） |
-| Smoke Test：WPF 切換 9 個頁面；報告頁按「今天」「產生報告」後寫出今天的報告 | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test：WPF 切換 9 個頁面；報告頁按「今天」「產生報告」後寫出今天的報告 | Windows CI | Passed（報告產生後開啟 Edge，不影響後續檢查） |
 | 報告頁外觀、DatePicker 操作、預設瀏覽器開啟、長期間產生時畫面不卡頓 | Windows 實機 | Not Tested |
+
+### Phase 5a（2026-11-16）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：資料根目錄預設位置與環境變數覆寫 | 同上 | Passed（513 個） |
+| Cli `run --minutes 1`：連續監控、時間到正常停止、CSV 7 筆、Log 開始／正常停止 | Linux 開發環境（Windows API 無法使用，各模組為 Unavailable） | Passed |
+| `Test-Stability.ps1 -Target Cli`：1 分鐘與 6 分鐘，量測、CSV／Log 檢查、Markdown 與 HTML 報告 | 同上 | Passed（見 PR 說明的記憶體數值） |
+| CI 第 8 步：Cli 連續監控 3 分鐘 | Windows CI | 見 PR 的 CI 結果 |
+| 24 小時穩定性（Cli 與 WPF） | Windows 實機 | Not Tested |

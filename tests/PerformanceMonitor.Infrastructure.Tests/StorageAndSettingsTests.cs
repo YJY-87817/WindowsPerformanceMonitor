@@ -36,7 +36,17 @@ public sealed class StorageAndSettingsTests : IDisposable
     {
         string expected = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WindowsPerformanceMonitor");
 
-        Assert.Equal(Path.GetFullPath(expected), AppDataPaths.CreateDefault().Root);
+        Assert.Equal(Path.GetFullPath(expected), AppDataPaths.CreateDefault(_ => null).Root);
+        Assert.Equal(Path.GetFullPath(expected), AppDataPaths.CreateDefault(_ => "  ").Root);
+    }
+
+    [Fact]
+    public void RootCanBeOverriddenByEnvironmentVariable()
+    {
+        AppDataPaths paths = AppDataPaths.CreateDefault(name => name == AppDataPaths.RootVariable ? _root : null);
+
+        Assert.Equal(Path.GetFullPath(_root), paths.Root);
+        Assert.Equal(Path.Combine(Path.GetFullPath(_root), "settings.json"), paths.SettingsFile);
     }
 
     [Fact]

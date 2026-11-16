@@ -2,7 +2,7 @@
 
 Windows 個人電腦效能監控工具 V2.0：以 C# + .NET 10 + WPF 重寫舊版 PowerShell 工具。
 
-> 目前狀態：**Phase 4 完成**（歷史報告：WPF「報告」頁或主控台 `report` 產生離線 HTML，含統計摘要、SVG 趨勢圖、尖峰時段、告警事件、高記憶體程序與資料品質）。下一步 Phase 5：整合測試、發行與文件。Phase 3 已完成 WPF 介面。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、NVIDIA GPU、網路、程序 RAM Top N、ACPI 熱區；WPF 有總覽、即時趨勢、磁碟、網路、溫度、程序、報告、狀態與錯誤、設定頁（開啟即監控；設定頁儲存後自動重新啟動套用）。主控台 `--once` 可取樣一次，`report --from 2026-11-01 --to 2026-11-07` 產生報告。
+> 目前狀態：**Phase 5a**（Cli 連續監控 `run` 與穩定性測試工具；發行打包與文件開發中）。Phase 4 已完成歷史報告：WPF「報告」頁或主控台 `report` 產生離線 HTML，含統計摘要、SVG 趨勢圖、尖峰時段、告警事件、高記憶體程序與資料品質。Phase 3 已完成 WPF 介面。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、NVIDIA GPU、網路、程序 RAM Top N、ACPI 熱區；WPF 有總覽、即時趨勢、磁碟、網路、溫度、程序、報告、狀態與錯誤、設定頁（開啟即監控；設定頁儲存後自動重新啟動套用）。主控台 `--once` 可取樣一次，`report --from 2026-11-01 --to 2026-11-07` 產生報告。
 
 舊版（PowerShell V1.0）與需求來源：[Windows_PC_Performance_Monitor_Specification](https://github.com/YJY-87817/Windows_PC_Performance_Monitor_Specification)（規格書 v1.5、開發規劃 v2.1）。
 
@@ -61,13 +61,37 @@ dotnet run --project src/PerformanceMonitor.Cli -- --once
 dotnet run --project src/PerformanceMonitor.Cli -- --once --json
 ```
 
+連續監控（按 Ctrl+C 停止；`--minutes N` 時 N 分鐘後自動停止）：
+
+```bash
+dotnet run --project src/PerformanceMonitor.Cli -- run --minutes 60
+```
+
+產生報告：
+
+```bash
+dotnet run --project src/PerformanceMonitor.Cli -- report --from 2026-11-01 --to 2026-11-07
+```
+
 與硬體無關的自我檢查：
 
 ```bash
 dotnet run --project src/PerformanceMonitor.Cli -- --self-check
 ```
 
-設定檔：`%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`（不存在時使用內建預設值；範例見 [docs/settings.example.json](docs/settings.example.json)）。
+設定檔：`%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`（不存在時使用內建預設值；範例見 [docs/settings.example.json](docs/settings.example.json)）。環境變數 `PERFORMANCEMONITOR_ROOT` 可改用其他資料根目錄（設定檔、CSV、Log、報告都在其下）。
+
+穩定性測試（Windows、PowerShell 7；預設 24 小時，判定規則見 [決策 0009](docs/decisions/0009-phase5-stability-and-release.md)）：
+
+```bash
+pwsh ./tools/Test-Stability.ps1 -Target Cli -Cli publish/Cli/PerformanceMonitor.Cli.exe
+```
+
+WPF 版本（含畫面更新與趨勢圖）：
+
+```bash
+pwsh ./tools/Test-Stability.ps1 -Target App -App publish/App/PerformanceMonitor.exe -Cli publish/Cli/PerformanceMonitor.Cli.exe -DurationMinutes 60
+```
 
 WPF 程式只能在 Windows 執行：
 
@@ -83,7 +107,7 @@ dotnet publish src/PerformanceMonitor.App -c Release -r win-x64 --self-contained
 
 ## CI
 
-每次推送在 `windows-latest` 執行 7 項檢查：Lint、Format、Type Check、Unit Test、Build Check、Git Diff Check、Smoke Test。詳見 [Testing-Plan](docs/Testing-Plan.md)。
+每次推送在 `windows-latest` 執行 8 項檢查：Lint、Format、Type Check、Unit Test、Build Check、Git Diff Check、Smoke Test、穩定性（Cli 連續監控 3 分鐘，報告上傳為 artifact）。另有手動觸發的「穩定性測試」workflow（Cli 或 WPF，最長 300 分鐘）。詳見 [Testing-Plan](docs/Testing-Plan.md)。
 
 ## 資料位置與隱私
 

@@ -1,0 +1,71 @@
+name: 穩定性測試（手動）
+
+# 手動觸發的長時間穩定性測試（決策 0009）：GitHub 主機單一工作最長 6 小時，24 小時測試請在實機執行
+# tools/Test-Stability.ps1。報告與量測資料上傳為 artifact。
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 受測程式
+        type: choice
+        options:
+          - Cli
+          - App
+        default: Cli
+      minutes:
+        description: 測試時間（分鐘，1～300）
+        type: number
+        default: 60
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  CONFIGURATION: Release
+
+jobs:
+  stability:
+    name: 穩定性（${{ inputs.target }}，${{ inputs.minutes }} 分鐘）
+    runs-on: windows-latest
+    timeout-minutes: 340
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v5
+
+      - name: 安裝 .NET SDK（版本依 global.json）
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: 發行（self-contained）
+        shell: bash
+        run: |
+          dotnet publish src/PerformanceMonitor.App -c "$CONFIGURATION" -r win-x64 --self-contained -o publish/App
+          dotnet publish src/PerformanceMonitor.Cli -c "$CONFIGURATION" -r win-x64 --self-contained -o publish/Cli
+
+      - name: 檢查測試時間
+        shell: pwsh
+        run: |
+          $minutes = [int]'${{ inputs.minutes }}'
+          if ($minutes -lt 1 -or $minutes -gt 300) { throw "測試時間須為 1～300 分鐘：$minutes" }
+
+      - name: 穩定性測試
+        shell: pwsh
+        run: >-
+          ./tools/Test-Stability.ps1 -Target ${{ inputs.target }}
+          -Cli publish/Cli/PerformanceMonitor.Cli.exe -App publish/App/PerformanceMonitor.exe
+          -DurationMinutes ${{ inputs.minutes }} -MeasureIntervalSeconds 60 -OutputDirectory TestResults/stability
+
+      - name: 上傳報告
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: stability-${{ inputs.target }}-${{ inputs.minutes }}min
+          path: |
+            TestResults/stability/*.md
+            TestResults/stability/*.csv
+            TestResults/stability/*.txt
+            TestResults/stability/report.html
+          if-no-files-found: warn

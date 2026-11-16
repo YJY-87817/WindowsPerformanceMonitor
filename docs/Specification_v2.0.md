@@ -298,7 +298,7 @@ Windows 桌面通知、SMART 健康資訊、AMD／Intel GPU、CPU 核心溫度�
 | 介面 | 說明 | Phase |
 |---|---|---|
 | WPF | 總覽、狀態／錯誤（3a）；即時趨勢、磁碟、網路、溫度、程序（3b）；設定（3c）；報告（4c）。見 §8.1、§8.2 | 3；4c |
-| Cli | `--self-check`、`--version`、`--help`；`--once` 取樣一次並寫 CSV／Log（行為與連續模式相同）；`--once --json` 以 JSON 輸出完整結果（取代舊版 `-PassThru`）；`report` 產生 HTML 報告（§8.2） | 0；2-1；4a |
+| Cli | `--self-check`、`--version`、`--help`；`--once` 取樣一次並寫 CSV／Log（行為與連續模式相同）；`--once --json` 以 JSON 輸出完整結果（取代舊版 `-PassThru`）；`report` 產生 HTML 報告（§8.2）；`run [--minutes N]` 連續監控（Ctrl+C 或時間到正常停止，每分鐘一行摘要；決策 0009） | 0；2-1；4a；5a |
 
 ### 8.1 WPF（Phase 3，決策 [0007](decisions/0007-wpf-ui.md)）
 

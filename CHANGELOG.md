@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Phase 5a（2026-11-16）：連續監控與穩定性測試
+
+- 主控台 `run [--minutes N]`：連續監控（與 WPF 相同的 CSV、Log、告警），Ctrl+C 或時間到正常停止，每分鐘一行摘要。
+- 環境變數 `PERFORMANCEMONITOR_ROOT` 可改用其他資料根目錄（Cli 與 WPF）。
+- `tools/Test-Stability.ps1`（PowerShell 7）：量測 Cli 或 WPF 的 CPU、記憶體、Handle、執行緒，檢查 CSV 與 Log，產生 Markdown 與 HTML 報告；判定規則見決策 0009。
+- CI 第 8 步：Cli 連續監控 3 分鐘的穩定性測試並上傳報告；新增手動觸發的長時間穩定性 workflow。
+
 ### Phase 4c（2026-11-16）：WPF 報告頁（Phase 4 完成）
 
 - WPF 新增「報告」頁（在「程序」之後）：起訖日期與「今天／昨天／最近 7 天／最近 30 天」，背景產生報告後以預設瀏覽器開啟；顯示摘要，並有「開啟報告」「開啟資料夾」。
