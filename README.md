@@ -2,7 +2,7 @@
 
 Windows 個人電腦效能監控工具 V2.0：以 C# + .NET 10 + WPF 重寫舊版 PowerShell 工具。
 
-> 目前狀態：**Phase 3 完成**（WPF 介面）。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、NVIDIA GPU、網路、程序 RAM Top N、ACPI 熱區；WPF 有總覽、即時趨勢、磁碟、網路、溫度、程序、狀態與錯誤、設定頁（開啟即監控；設定頁儲存後自動重新啟動套用）。HTML 報告於 Phase 4 提供。主控台 `--once` 可取樣一次。
+> 目前狀態：**Phase 4a**（歷史報告：主控台 `report` 產生離線 HTML，含統計摘要與資料品質；趨勢圖、尖峰、告警、程序統計與 WPF 報告頁開發中）。Phase 3 已完成 WPF 介面。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、NVIDIA GPU、網路、程序 RAM Top N、ACPI 熱區；WPF 有總覽、即時趨勢、磁碟、網路、溫度、程序、狀態與錯誤、設定頁（開啟即監控；設定頁儲存後自動重新啟動套用）。主控台 `--once` 可取樣一次，`report --from 2026-11-01 --to 2026-11-07` 產生報告。
 
 舊版（PowerShell V1.0）與需求來源：[Windows_PC_Performance_Monitor_Specification](https://github.com/YJY-87817/Windows_PC_Performance_Monitor_Specification)（規格書 v1.5、開發規劃 v2.1）。
 

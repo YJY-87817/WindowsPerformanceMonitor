@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using PerformanceMonitor.Application.Reports;
 using PerformanceMonitor.Core.Abstractions;
 using PerformanceMonitor.Infrastructure.Common;
 using PerformanceMonitor.Infrastructure.Logging;
@@ -31,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAppLog, DailyLogWriter>();
         services.AddSingleton<CsvFileWriter>();
         services.Replace(ServiceDescriptor.Singleton<ISnapshotRecorder, CsvSnapshotRecorder>());
+        services.AddSingleton<IReportStore, FileReportStore>();
 
         // 監控模組：註冊順序即取樣與輸出順序。
         services.AddSingleton<IPdhQueryFactory, PdhQueryFactory>();

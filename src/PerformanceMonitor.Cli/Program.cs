@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -5,17 +6,20 @@ using Microsoft.Extensions.Logging;
 using PerformanceMonitor.Application;
 using PerformanceMonitor.Application.Monitoring;
 using PerformanceMonitor.Application.Output;
+using PerformanceMonitor.Application.Reports;
 using PerformanceMonitor.Application.Services;
 using PerformanceMonitor.Core.Abstractions;
 using PerformanceMonitor.Core.Models;
 using PerformanceMonitor.Infrastructure;
 using PerformanceMonitor.Infrastructure.Startup;
 using PerformanceMonitor.Infrastructure.Storage;
+using PerformanceMonitor.Reporting.Html;
+using PerformanceMonitor.Reporting.Model;
 
 namespace PerformanceMonitor.Cli;
 
 /// <summary>
-/// 主控台進入點。結束碼：0 成功、1 檢查失敗或設定／目錄錯誤、2 參數錯誤。
+/// 主控台進入點。結束碼：0 成功、1 檢查失敗、設定／目錄錯誤或報告寫入失敗、2 參數錯誤。
 /// </summary>
 internal static class Program
 {
@@ -24,6 +28,9 @@ internal static class Program
 
           --once           取樣一次，寫入 CSV 與 Log 後結束（行為與連續監控相同）
           --once --json    同上，以 JSON 輸出完整結果（供腳本使用）
+          report [--from 日期] [--to 日期] [--out 路徑]
+                           產生離線 HTML 報告（日期為本機日期 yyyy-MM-dd，含頭含尾，最長 366 天；
+                           省略 --from／--to 時為今天；預設寫到資料目錄 Reports\Report_起日-訖日.html）
           --self-check     建立服務並執行與硬體無關的基本檢查
           --version        顯示版本
           --help           顯示本說明
@@ -34,6 +41,11 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         string[] normalized = [.. args.Select(a => a.ToLowerInvariant())];
+        if (normalized is ["report", ..])
+        {
+            return await RunReportAsync(args[1..]).ConfigureAwait(false);
+        }
+
         switch (normalized)
         {
             case ["--version"]:
@@ -116,6 +128,103 @@ internal static class Program
         IStorageStatus storage = host.Services.GetRequiredService<IStorageStatus>();
         Console.Write(json ? SnapshotFormatter.ToJson(snapshot, storage) + "\n" : SnapshotFormatter.ToText(snapshot, storage));
         return 0;
+    }
+
+    private static async Task<int> RunReportAsync(string[] args)
+    {
+        if (!TryParseReportArgs(args, out DateOnly? from, out DateOnly? to, out string? output, out string? argError))
+        {
+            await Console.Error.WriteLineAsync(argError).ConfigureAwait(false);
+            await Console.Error.WriteLineAsync(Usage).ConfigureAwait(false);
+            return 2;
+        }
+
+        DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+        DateOnly end = to ?? from ?? today;
+        ReportPeriod? period = ReportPeriod.TryCreate(from ?? end, end, out string? periodError);
+        if (period is null)
+        {
+            await Console.Error.WriteLineAsync($"報告期間錯誤：{periodError}").ConfigureAwait(false);
+            return 2;
+        }
+
+        AppDataPaths paths = AppDataPaths.CreateDefault();
+        StartupCheck check = MonitoringStartup.Check(paths);
+        if (!check.Settings.IsValid)
+        {
+            await Console.Error.WriteLineAsync($"設定檔有錯誤，無法找到資料目錄（{check.Settings.Source}）：").ConfigureAwait(false);
+            foreach (string error in check.Settings.Errors)
+            {
+                await Console.Error.WriteLineAsync($"  - {error}").ConfigureAwait(false);
+            }
+
+            return 1;
+        }
+
+        HostApplicationBuilder builder = CreateBuilder();
+        builder.Services.AddSingleton(check.Settings.Settings);
+        builder.Services.AddSingleton(paths);
+        using IHost host = builder.Build();
+
+        ReportResult result;
+        try
+        {
+            result = host.Services.GetRequiredService<ReportService>().Generate(period, output);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            await Console.Error.WriteLineAsync($"報告寫入失敗：{ex.Message}").ConfigureAwait(false);
+            return 1;
+        }
+
+        DataQuality q = result.Model.Quality;
+        Console.WriteLine($"報告：{result.Path}");
+        Console.WriteLine($"期間：{period}（趨勢粒度：{result.Model.Timeline.GranularityText}）");
+        Console.WriteLine($"指標：{result.Model.Series.Count} 項；SystemMetrics 紀錄 {q.ActualSamples} 筆，預期 {(q.ExpectedSamples?.ToString(CultureInfo.InvariantCulture) ?? "無法計算")}，缺失 {HtmlReportRenderer.Ratio(q.MissingRatio)}");
+        Console.WriteLine($"監控時段：{q.Sessions.Count} 個；檔案問題：{q.FileIssues.Count} 個；沒有資料的日期：{q.DatesWithoutData.Count} 天");
+        return 0;
+    }
+
+    /// <summary>解析 report 的參數。</summary>
+    private static bool TryParseReportArgs(string[] args, out DateOnly? from, out DateOnly? to, out string? output, out string? error)
+    {
+        from = null;
+        to = null;
+        output = null;
+        error = null;
+        for (int i = 0; i < args.Length; i++)
+        {
+            string name = args[i].ToLowerInvariant();
+            if (i + 1 >= args.Length || name is not ("--from" or "--to" or "--out"))
+            {
+                error = $"不支援的 report 參數：{args[i]}";
+                return false;
+            }
+
+            string value = args[++i];
+            if (name == "--out")
+            {
+                output = value;
+                continue;
+            }
+
+            if (!DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
+            {
+                error = $"{name} 不是 yyyy-MM-dd 格式的日期：{value}";
+                return false;
+            }
+
+            if (name == "--from")
+            {
+                from = date;
+            }
+            else
+            {
+                to = date;
+            }
+        }
+
+        return true;
     }
 
     private static HostApplicationBuilder CreateBuilder()
