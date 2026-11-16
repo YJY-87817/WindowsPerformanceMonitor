@@ -3,8 +3,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using PerformanceMonitor.Application.Alerts;
 using PerformanceMonitor.Application.Logging;
 using PerformanceMonitor.Application.Monitoring;
+using PerformanceMonitor.Application.Reports;
 using PerformanceMonitor.Application.Services;
 using PerformanceMonitor.Core.Abstractions;
+using PerformanceMonitor.Core.Settings;
 
 namespace PerformanceMonitor.Application;
 
@@ -33,6 +35,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AlertService>();
         services.AddSingleton<IAlertProvider>(sp => sp.GetRequiredService<AlertService>());
         services.TryAddSingleton<ISnapshotRecorder, NullSnapshotRecorder>();
+        services.AddTransient(sp => new ReportService(
+            sp.GetRequiredService<AppSettings>(), sp.GetRequiredService<IReportStore>(), sp.GetRequiredService<IClock>(), TimeZoneInfo.Local));
         return services;
     }
 }

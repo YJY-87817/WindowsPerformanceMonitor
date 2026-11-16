@@ -11,5 +11,6 @@
 | [0005](0005-data-storage.md) | 資料目錄、檔案命名與 schema 版本 | 已採用 |
 | [0006](0006-self-contained-publish.md) | self-contained 發行 | 已採用 |
 | [0007](0007-wpf-ui.md) | WPF 介面的結構與範圍（Presentation 專案、開啟即監控、不做系統匣、原生圖表、淺色、繁中） | 已採用 |
+| [0008](0008-html-report.md) | 歷史分析與 HTML 報告（入口、統計來源、粒度、尖峰時段、資料品質、離線 HTML） | 已採用 |
 
 格式：狀態、日期、背景、決定、影響。

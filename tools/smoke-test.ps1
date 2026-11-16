@@ -328,7 +328,6 @@ if ($App) {
         if ($process.HasExited) {
             Write-Fail 'WPF 在關閉前已結束'
         }
-        $exitCode = '?'
         $null = $process.CloseMainWindow()
         if (-not $process.WaitForExit(30000)) {
             Write-Fail 'WPF 關閉主視窗後 30 秒內沒有結束'
@@ -338,10 +337,33 @@ if ($App) {
         } elseif (@([System.IO.File]::ReadAllLines($csvPath)).Count -le $rowsBefore) {
             Write-Fail 'WPF 監控期間與停止時沒有寫入 SystemMetrics CSV'
         } else {
-            try { $exitCode = $process.ExitCode } catch { } # 重新啟動後的程式不是本腳本啟動，可能讀不到結束碼
-            Write-Pass "WPF：關閉主視窗後停止監控並結束（結束碼 $exitCode、CSV 新增 $(@([System.IO.File]::ReadAllLines($csvPath)).Count - $rowsBefore) 列）"
+            # 重新啟動後的程式不是本腳本啟動，PowerShell 讀不到結束碼；改以「監控正常停止」Log 確認正常結束。
+            $exitText = '由「監控正常停止」Log 確認'
+            try { if ($null -ne $process.ExitCode) { $exitText = "結束碼 $($process.ExitCode)" } } catch { }
+            Write-Pass "WPF：關閉主視窗後停止監控並結束（$exitText、CSV 新增 $(@([System.IO.File]::ReadAllLines($csvPath)).Count - $rowsBefore) 列）"
         }
     }
+}
+
+# 5. 報告：產生今天的離線 HTML 報告（含上面 --once 與 WPF 寫入的資料）。
+$reportPath = Join-Path $root "Reports\Report_$date-$date.html"
+Remove-Item -LiteralPath $reportPath -ErrorAction SilentlyContinue
+$reportOutput = & $Exe report
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "report 結束碼 $LASTEXITCODE：$($reportOutput -join ' | ')"
+} elseif (-not (Test-Path -LiteralPath $reportPath)) {
+    Write-Fail "report 沒有產生報告檔：$reportPath"
+} else {
+    $html = [System.IO.File]::ReadAllText($reportPath)
+    $missing = @('<!DOCTYPE html>', 'Content-Security-Policy', '統計摘要', '<h3>CPU</h3>', '資料品質', '監控時段') | Where-Object { -not $html.Contains($_) }
+    if ($missing.Count -gt 0) {
+        Write-Fail "報告缺少內容：$($missing -join '、')"
+    } elseif ($html -match '<script|https?://') {
+        Write-Fail '報告含有 script 或外部網址（應為離線 HTML）'
+    } else {
+        Write-Pass "報告：$(($reportOutput | Select-Object -Skip 2 -First 2) -join '；')"
+    }
+    Remove-Item -LiteralPath $reportPath -ErrorAction SilentlyContinue
 }
 
 if ($App) {

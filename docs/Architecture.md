@@ -43,7 +43,7 @@
 |---|---|---|---|
 | Core | `net10.0` | 資料模型、介面、列舉（狀態、錯誤分類）、共用規則 | WPF、Windows API |
 | Application | `net10.0` | 監控流程、排程、告警狀態機、服務協調、使用案例（含「產生報告」） | 硬體 API 細節、統計演算法 |
-| Reporting | `net10.0` | 統計（平均、最大、P95）、彙總、HTML／SVG 產生 | 採樣、檔案讀寫流程 |
+| Reporting | `net10.0` | 統計（平均、最大、P95）、彙總、資料品質、HTML／SVG 產生（`ReportBuilder`、`HtmlReportRenderer`） | 採樣、檔案讀寫流程（Application 的 `ReportService` 讀檔後逐筆交給 `ReportBuilder`，檔案存取經 `IReportStore`） |
 | Infrastructure | `net10.0-windows` | Windows 資料來源（PDH、nvidia-smi 等）、CSV、Log、時間來源 | UI |
 | Presentation | `net10.0` | ViewModel（CommunityToolkit.Mvvm）、畫面文字與數值格式 | WPF 控制項、Windows API |
 | App | `net10.0-windows` | WPF Views（XAML）、轉換器、主題資源、DI 組裝、畫面更新計時器、關閉時停止監控 | 監控與資料存取邏輯 |
