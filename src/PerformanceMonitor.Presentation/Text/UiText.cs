@@ -54,6 +54,9 @@ public static class UiText
     /// <summary>ACPI 熱區說明（不得稱為 CPU 溫度）。</summary>
     public const string ThermalZoneNote = "ACPI 熱區不是 CPU 溫度；部分電腦（特別是桌上型電腦）會一直回報固定值。";
 
+    /// <summary>頁面：設定。</summary>
+    public const string SettingsPage = "設定";
+
     /// <summary>頁面：狀態與錯誤。</summary>
     public const string StatusPage = "狀態與錯誤";
 

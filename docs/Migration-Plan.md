@@ -64,7 +64,7 @@
 
 | # | 舊版功能 | v1.5 | 建議處置 | 說明 | Phase |
 |---|---|---|---|---|---|
-| S1 | JSON 設定檔與完整驗證 | §9 | 保留（已確認：沿用舊版並精簡） | 位置 `%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`；WPF 設定頁讀寫同一檔。欄位見規格 v2.0 §7 | 1／3 |
+| S1 | JSON 設定檔與完整驗證 | §9 | 保留（已確認：沿用舊版並精簡；3c 完成設定頁） | 位置 `%LOCALAPPDATA%\WindowsPerformanceMonitor\settings.json`；WPF 設定頁讀寫同一檔（完整改寫、保留 .bak、儲存後重新啟動）。欄位見規格 v2.0 §7 | 1／3 |
 | S2 | 命令列即時畫面 | §4.1 | 不再需要 | 由 WPF 取代；Cli 只提供診斷命令 | — |
 | S3 | `-Once` | §5.2 | 改善（已完成） | Cli `--once`，行為與連續模式相同（寫 CSV 與 Log） | 2 |
 | S4 | `-PassThru`（輸出物件供腳本使用） | — | 改善（已確認、已完成） | Cli `--once --json` 輸出 JSON | 2 |
