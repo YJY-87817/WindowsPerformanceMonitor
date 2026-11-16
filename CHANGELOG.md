@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Phase 5b（2026-11-16）：發行打包與 Release 流程
+
+- 版本號改為 2.0.0（`Directory.Build.props`）。
+- `tools/package.ps1`：兩個 self-contained 單一檔案 exe（壓縮；App 約 63 MB、Cli 約 37 MB）＋ README、CHANGELOG、settings.example.json 打包為 `WindowsPerformanceMonitor-<版本>-win-x64.zip`，附 SHA256SUMS.txt。
+- CI 的 Build Check 改用打包腳本，Smoke Test 與穩定性測試使用單一檔案發行檔；zip 上傳為 artifact。
+- Release workflow：推 `v*` tag 時檢查版本與 CHANGELOG、建置、測試、打包、Smoke Test，建立草稿 Release（含「-」的 tag 標為預覽版）。
+- `actions/upload-artifact` 升級到 v5（Node.js 20 淘汰）。
+
 ### Phase 5a（2026-11-16）：連續監控與穩定性測試
 
 - 主控台 `run [--minutes N]`：連續監控（與 WPF 相同的 CSV、Log、告警），Ctrl+C 或時間到正常停止，每分鐘一行摘要。

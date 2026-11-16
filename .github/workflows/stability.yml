@@ -39,11 +39,9 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: 發行（self-contained）
-        shell: bash
-        run: |
-          dotnet publish src/PerformanceMonitor.App -c "$CONFIGURATION" -r win-x64 --self-contained -o publish/App
-          dotnet publish src/PerformanceMonitor.Cli -c "$CONFIGURATION" -r win-x64 --self-contained -o publish/Cli
+      - name: 發行（self-contained 單一檔案，與正式發行相同）
+        shell: pwsh
+        run: ./tools/package.ps1 -Configuration $env:CONFIGURATION -PublishDirectory publish -OutputDirectory artifacts
 
       - name: 檢查測試時間
         shell: pwsh
@@ -60,7 +58,7 @@ jobs:
 
       - name: 上傳報告
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: stability-${{ inputs.target }}-${{ inputs.minutes }}min
           path: |

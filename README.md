@@ -2,7 +2,7 @@
 
 Windows 個人電腦效能監控工具 V2.0：以 C# + .NET 10 + WPF 重寫舊版 PowerShell 工具。
 
-> 目前狀態：**Phase 5a**（Cli 連續監控 `run` 與穩定性測試工具；發行打包與文件開發中）。Phase 4 已完成歷史報告：WPF「報告」頁或主控台 `report` 產生離線 HTML，含統計摘要、SVG 趨勢圖、尖峰時段、告警事件、高記憶體程序與資料品質。Phase 3 已完成 WPF 介面。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、NVIDIA GPU、網路、程序 RAM Top N、ACPI 熱區；WPF 有總覽、即時趨勢、磁碟、網路、溫度、程序、報告、狀態與錯誤、設定頁（開啟即監控；設定頁儲存後自動重新啟動套用）。主控台 `--once` 可取樣一次，`report --from 2026-11-01 --to 2026-11-07` 產生報告。
+> 目前狀態：**Phase 5b**（發行打包：單一檔案 zip 與草稿 Release 流程；使用說明與 2.0.0 發行文件開發中）。Phase 5a 已加入 Cli 連續監控 `run` 與穩定性測試工具。Phase 4 已完成歷史報告：WPF「報告」頁或主控台 `report` 產生離線 HTML，含統計摘要、SVG 趨勢圖、尖峰時段、告警事件、高記憶體程序與資料品質。Phase 3 已完成 WPF 介面。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、NVIDIA GPU、網路、程序 RAM Top N、ACPI 熱區；WPF 有總覽、即時趨勢、磁碟、網路、溫度、程序、報告、狀態與錯誤、設定頁（開啟即監控；設定頁儲存後自動重新啟動套用）。主控台 `--once` 可取樣一次，`report --from 2026-11-01 --to 2026-11-07` 產生報告。
 
 舊版（PowerShell V1.0）與需求來源：[Windows_PC_Performance_Monitor_Specification](https://github.com/YJY-87817/Windows_PC_Performance_Monitor_Specification)（規格書 v1.5、開發規劃 v2.1）。
 
@@ -99,15 +99,21 @@ WPF 程式只能在 Windows 執行：
 dotnet run --project src/PerformanceMonitor.App
 ```
 
-發行（self-contained，不需另外安裝 .NET）：
+發行打包（self-contained 單一檔案，產生 `artifacts/WindowsPerformanceMonitor-<版本>-win-x64.zip` 與 `SHA256SUMS.txt`）：
 
 ```bash
-dotnet publish src/PerformanceMonitor.App -c Release -r win-x64 --self-contained -o publish/App
+pwsh ./tools/package.ps1
 ```
+
+發行新版：
+
+1. 修改 `Directory.Build.props` 的 `Version`，並在 `CHANGELOG.md` 加入 `## [版本] - 日期` 段落。
+2. 合併到 main 後推 tag（例如 `v2.0.0`；含「-」的 tag 例如 `v2.0.0-rc.1` 標為預覽版）。
+3. Release workflow 會檢查版本一致、建置、測試、打包、Smoke Test，並建立**草稿** Release（附 zip、SHA-256、CHANGELOG 段落與 SmartScreen 說明）；確認後在 GitHub 發布。
 
 ## CI
 
-每次推送在 `windows-latest` 執行 8 項檢查：Lint、Format、Type Check、Unit Test、Build Check、Git Diff Check、Smoke Test、穩定性（Cli 連續監控 3 分鐘，報告上傳為 artifact）。另有手動觸發的「穩定性測試」workflow（Cli 或 WPF，最長 300 分鐘）。詳見 [Testing-Plan](docs/Testing-Plan.md)。
+每次推送在 `windows-latest` 執行 8 項檢查（Build Check 產生單一檔案 zip 並上傳為 artifact `package`，Smoke Test 使用同一份發行檔）：Lint、Format、Type Check、Unit Test、Build Check、Git Diff Check、Smoke Test、穩定性（Cli 連續監控 3 分鐘，報告上傳為 artifact）。另有手動觸發的「穩定性測試」workflow（Cli 或 WPF，最長 300 分鐘）。詳見 [Testing-Plan](docs/Testing-Plan.md)。
 
 ## 資料位置與隱私
 

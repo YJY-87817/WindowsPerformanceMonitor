@@ -233,5 +233,15 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | 單元測試：資料根目錄預設位置與環境變數覆寫 | 同上 | Passed（513 個） |
 | Cli `run --minutes 1`：連續監控、時間到正常停止、CSV 7 筆、Log 開始／正常停止 | Linux 開發環境（Windows API 無法使用，各模組為 Unavailable） | Passed |
 | `Test-Stability.ps1 -Target Cli`：1 分鐘與 6 分鐘，量測、CSV／Log 檢查、Markdown 與 HTML 報告 | 同上 | Passed（見 PR 說明的記憶體數值） |
-| CI 第 8 步：Cli 連續監控 3 分鐘 | Windows CI | 見 PR 的 CI 結果 |
+| CI 第 8 步：Cli 連續監控 3 分鐘 | Windows CI | Passed（Working Set 52～64 MB、Private Bytes 21～35 MB、Handle 約 445、執行緒 11～14；第 2.3 分鐘 GC 回收後持平） |
 | 24 小時穩定性（Cli 與 WPF） | Windows 實機 | Not Tested |
+
+### Phase 5b（2026-11-16）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| `tools/package.ps1`：單一檔案發行（App 62.7 MB、Cli 36.7 MB）、只有 exe、zip 88.7 MB 與 SHA-256 | Linux 開發環境（交叉建置 win-x64） | Passed |
+| Release workflow 的版本檢查與 CHANGELOG 段落擷取（版本一致、不一致時失敗） | Linux 開發環境（PowerShell 7） | Passed |
+| Smoke Test 與 3 分鐘穩定性測試使用單一檔案發行檔（含第一次執行解壓縮原生元件） | Windows CI | 見 PR 的 CI 結果 |
+| Release workflow 實際建立草稿 Release | GitHub（推 tag） | Not Tested（5c 完成 CHANGELOG 2.0.0 後由負責人推 tag） |
+| 單一檔案在 Windows 11／10 實機的第一次啟動時間、防毒軟體與 SmartScreen 行為 | Windows 實機 | Not Tested |
