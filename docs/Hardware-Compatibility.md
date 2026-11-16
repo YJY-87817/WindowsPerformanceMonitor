@@ -2,6 +2,7 @@
 
 - 版本：Phase 0 初稿（2026-11-13）
 - 驗證狀態：Passed、Skipped、Not Tested、Failed（定義見 [Testing-Plan.md](Testing-Plan.md)）
+- 實機驗證步驟見 [Manual-Test-Checklist.md](Manual-Test-Checklist.md)；完成後更新本文件的「狀態」與「實機狀態」。
 
 ## 1. 作業系統與執行環境
 

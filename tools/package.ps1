@@ -6,7 +6,7 @@
 .DESCRIPTION
   1. dotnet publish App 與 Cli（win-x64、self-contained、PublishSingleFile、EnableCompressionInSingleFile、
      IncludeNativeLibrariesForSelfExtract；不輸出 .pdb）到 <PublishDirectory>/App、<PublishDirectory>/Cli。
-  2. 組成 zip：PerformanceMonitor.exe、PerformanceMonitor.Cli.exe、README.md、CHANGELOG.md、settings.example.json。
+  2. 組成 zip：PerformanceMonitor.exe、PerformanceMonitor.Cli.exe、使用說明.md、CHANGELOG.md、THIRD-PARTY-NOTICES.md、settings.example.json。
   3. 產生 SHA256SUMS.txt（zip 的 SHA-256）。
   CI（Build Check 與 Smoke Test 使用同一份發行檔）與 release workflow 都呼叫本腳本。
 
@@ -63,7 +63,7 @@ try {
     if (Test-Path -LiteralPath $staging) { Remove-Item -LiteralPath $staging -Recurse -Force }
     $null = New-Item -ItemType Directory -Path $staging
     Copy-Item -LiteralPath $exes -Destination $staging
-    Copy-Item -LiteralPath 'README.md', 'CHANGELOG.md', 'docs/settings.example.json' -Destination $staging
+    Copy-Item -LiteralPath 'docs/使用說明.md', 'CHANGELOG.md', 'THIRD-PARTY-NOTICES.md', 'docs/settings.example.json' -Destination $staging
     $zip = Join-Path $OutputDirectory "$name.zip"
     if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
     Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $zip -CompressionLevel Optimal

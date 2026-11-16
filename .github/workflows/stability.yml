@@ -58,7 +58,7 @@ jobs:
 
       - name: 上傳報告
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: stability-${{ inputs.target }}-${{ inputs.minutes }}min
           path: |

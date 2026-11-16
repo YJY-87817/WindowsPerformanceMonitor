@@ -1,8 +1,15 @@
 # Windows Performance Monitor
 
-Windows 個人電腦效能監控工具 V2.0：以 C# + .NET 10 + WPF 重寫舊版 PowerShell 工具。
+Windows 個人電腦效能監控工具：在本機持續記錄 CPU、記憶體、磁碟容量與 I/O、NVIDIA GPU、網路、程序 RAM 前 N 名與 ACPI 熱區溫度；
+視窗介面即時顯示與告警，資料寫成 CSV，並可產生離線 HTML 報告。資料只留在本機。V2.0 以 C# + .NET 10 + WPF 重寫舊版 PowerShell 工具。
 
-> 目前狀態：**Phase 5b**（發行打包：單一檔案 zip 與草稿 Release 流程；使用說明與 2.0.0 發行文件開發中）。Phase 5a 已加入 Cli 連續監控 `run` 與穩定性測試工具。Phase 4 已完成歷史報告：WPF「報告」頁或主控台 `report` 產生離線 HTML，含統計摘要、SVG 趨勢圖、尖峰時段、告警事件、高記憶體程序與資料品質。Phase 3 已完成 WPF 介面。已提供 CPU、記憶體、磁碟容量、磁碟 I/O、NVIDIA GPU、網路、程序 RAM Top N、ACPI 熱區；WPF 有總覽、即時趨勢、磁碟、網路、溫度、程序、報告、狀態與錯誤、設定頁（開啟即監控；設定頁儲存後自動重新啟動套用）。主控台 `--once` 可取樣一次，`report --from 2026-11-01 --to 2026-11-07` 產生報告。
+> 目前狀態：**2.0.0-rc.1 預覽版**（Phase 0～5 完成）；正式版 2.0.0 待實機驗證（[實機驗證清單](docs/Manual-Test-Checklist.md)）。
+
+## 下載與使用
+
+1. 到 GitHub 的 **Releases** 下載 `WindowsPerformanceMonitor-<版本>-win-x64.zip`（Windows 11 或 Windows 10 22H2，x64；不需安裝 .NET）。
+2. 解壓縮後執行 `PerformanceMonitor.exe`。程式沒有數位簽章，SmartScreen 警告時按「其他資訊 → 仍要執行」。
+3. 詳細操作見 [使用說明](docs/使用說明.md)（zip 內也有一份）。
 
 舊版（PowerShell V1.0）與需求來源：[Windows_PC_Performance_Monitor_Specification](https://github.com/YJY-87817/Windows_PC_Performance_Monitor_Specification)（規格書 v1.5、開發規劃 v2.1）。
 
@@ -10,14 +17,17 @@ Windows 個人電腦效能監控工具 V2.0：以 C# + .NET 10 + WPF 重寫舊�
 
 | 文件 | 內容 |
 |---|---|
-| [docs/Specification_v2.0.md](docs/Specification_v2.0.md) | 規格書（初稿） |
+| [docs/使用說明.md](docs/使用說明.md) | 使用說明（安裝、各頁面、設定、告警、報告、資料位置、常見問題） |
+| [docs/Manual-Test-Checklist.md](docs/Manual-Test-Checklist.md) | 實機驗證清單 |
+| [docs/Specification_v2.0.md](docs/Specification_v2.0.md) | 規格書 |
 | [docs/Architecture.md](docs/Architecture.md) | 分層架構、依賴方向、DI 組裝、模組介面 |
 | [docs/Migration-Plan.md](docs/Migration-Plan.md) | 舊版功能盤點與處置 |
-| [docs/Data-Schema.md](docs/Data-Schema.md) | CSV 與 Log 格式（schema v1 初稿） |
+| [docs/Data-Schema.md](docs/Data-Schema.md) | CSV 與 Log 格式（schema v1） |
 | [docs/Hardware-Compatibility.md](docs/Hardware-Compatibility.md) | 平台、資料來源、權限與限制 |
 | [docs/Testing-Plan.md](docs/Testing-Plan.md) | CI 檢查、測試層級與紀錄 |
 | [docs/decisions/](docs/decisions/README.md) | 技術決策紀錄 |
 | [CHANGELOG.md](CHANGELOG.md) | 版本變更 |
+| [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) | 第三方授權聲明 |
 
 ## 專案結構
 
@@ -28,9 +38,10 @@ src/
   PerformanceMonitor.Reporting       統計與 HTML／SVG 報告（net10.0）
   PerformanceMonitor.Infrastructure  Windows 資料來源、CSV、Log（net10.0-windows）
   PerformanceMonitor.App             WPF 桌面程式（net10.0-windows）
-  PerformanceMonitor.Cli             主控台程式：自我檢查與 Smoke Test（net10.0-windows）
+  PerformanceMonitor.Presentation    ViewModel（不參考 WPF，net10.0）
+  PerformanceMonitor.Cli             主控台程式：單次取樣、連續監控、報告、自我檢查（net10.0-windows）
 tests/                               各層 xUnit 測試
-tools/                               CI 檢查腳本
+tools/                               CI 檢查、Smoke Test、穩定性測試、打包腳本
 ```
 
 ## 開發
@@ -118,3 +129,7 @@ pwsh ./tools/package.ps1
 ## 資料位置與隱私
 
 監控資料預設存在 `%LOCALAPPDATA%\WindowsPerformanceMonitor\`。程序名稱可能揭露使用者使用的軟體，資料只留在本機，不上傳。
+
+## 授權
+
+著作權所有，保留一切權利。第三方元件（.NET、CommunityToolkit.Mvvm、Microsoft.Extensions，皆為 MIT）見 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
