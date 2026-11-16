@@ -6,7 +6,7 @@
 
 ## 決定
 
-1. **資料目錄：** 預設 `%LOCALAPPDATA%\WindowsPerformanceMonitor\Data`（CSV）與 `...\Logs`（Log）；可在設定中更改。程式安裝在唯讀位置（例如 Program Files）也能寫入。
+1. **資料目錄：** 預設 `%LOCALAPPDATA%\WindowsPerformanceMonitor\Data`（CSV）與 `...\Logs`（Log）；可在設定中更改。程式安裝在唯讀位置（例如 Program Files）也能寫入。環境變數 `PERFORMANCEMONITOR_ROOT` 可改用其他根目錄（設定檔、CSV、Log、報告都在其下；Phase 5a 加入，供穩定性測試等隔離環境使用，見 [0009](0009-phase5-stability-and-release.md)）。
 2. **檔名：** `<類型>_v<schema 版本>_<YYYYMMDD>.csv`，例如 `SystemMetrics_v1_20261113.csv`；Log 為 `Application_YYYYMMDD.log`、`Error_YYYYMMDD.log`。
 3. **schema 版本寫在檔名：** 欄位改變時版本號 +1，自然寫到新檔，舊檔不修改；取代舊版「標題列不符改寫 `_2` 檔」的做法。此規則自第一次發行起適用；發行前的欄位調整直接修改 v1（2026-11-13 確認，見 Data-Schema 修訂紀錄）。
 4. **分檔日期：** 以紀錄時間的**本機日期**決定（同舊版），跨午夜寫入新檔；檔內時間欄位為 UTC。

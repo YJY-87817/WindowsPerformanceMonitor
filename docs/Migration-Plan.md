@@ -69,7 +69,7 @@
 | S3 | `-Once` | §5.2 | 改善（已完成） | Cli `--once`，行為與連續模式相同（寫 CSV 與 Log） | 2 |
 | S4 | `-PassThru`（輸出物件供腳本使用） | — | 改善（已確認、已完成） | Cli `--once --json` 輸出 JSON | 2 |
 | S5 | `-Verbose` 診斷輸出 | — | 改善 | 改用 Logging 等級設定 | 1 |
-| S6 | 24 小時穩定性工具 `Test-Stability.ps1` | §7.2 | 改善 | Phase 5 提供 C# 版或以 Cli 搭配外部量測 | 5 |
+| S6 | 24 小時穩定性工具 `Test-Stability.ps1` | §7.2 | 改善（5a 完成） | `tools/Test-Stability.ps1`（PowerShell 7）量測 Cli `run` 或 WPF；判定規則見決策 0009 | 5 |
 | S7 | 隱私：不上傳、不記錄機密、只執行 nvidia-smi | §7.4 | 保留 | | 全部 |
 
 ## 6. 待確認事項彙整

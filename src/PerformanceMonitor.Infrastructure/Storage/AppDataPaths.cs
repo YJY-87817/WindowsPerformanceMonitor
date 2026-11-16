@@ -27,9 +27,22 @@ public sealed class AppDataPaths
     /// <summary>設定檔完整路徑。</summary>
     public string SettingsFile => Path.Combine(Root, SettingsFileName);
 
-    /// <summary>預設位置：%LOCALAPPDATA%\WindowsPerformanceMonitor。</summary>
-    public static AppDataPaths CreateDefault() =>
-        new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), FolderName));
+    /// <summary>
+    /// 改用其他根目錄的環境變數（設定檔、CSV、Log、報告都在其下）。供穩定性測試與隔離的測試環境使用，
+    /// 一般使用者不需要設定。
+    /// </summary>
+    public const string RootVariable = "PERFORMANCEMONITOR_ROOT";
+
+    /// <summary>
+    /// 預設位置：%LOCALAPPDATA%\WindowsPerformanceMonitor；設定了環境變數 <see cref="RootVariable"/> 時改用其值。
+    /// </summary>
+    public static AppDataPaths CreateDefault(Func<string, string?>? environment = null)
+    {
+        string? overridden = (environment ?? Environment.GetEnvironmentVariable)(RootVariable);
+        return string.IsNullOrWhiteSpace(overridden)
+            ? new AppDataPaths(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), FolderName))
+            : new AppDataPaths(overridden.Trim());
+    }
 
     /// <summary>CSV 目錄完整路徑。</summary>
     public string ResolveDataDirectory(LoggingSettings logging)

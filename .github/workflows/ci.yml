@@ -62,3 +62,20 @@ jobs:
         if: ${{ !cancelled() }}
         shell: pwsh
         run: ./tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe -App publish/App/PerformanceMonitor.exe
+
+      - name: 8. 穩定性（Cli 連續監控 3 分鐘）
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./tools/Test-Stability.ps1 -Target Cli -Cli publish/Cli/PerformanceMonitor.Cli.exe -DurationMinutes 3 -MeasureIntervalSeconds 10 -OutputDirectory TestResults/stability
+
+      - name: 上傳穩定性報告
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: stability-ci
+          path: |
+            TestResults/stability/*.md
+            TestResults/stability/*.csv
+            TestResults/stability/*.txt
+            TestResults/stability/report.html
+          if-no-files-found: warn
