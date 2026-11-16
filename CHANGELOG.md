@@ -4,6 +4,42 @@
 
 ## [Unreleased]
 
+## [2.0.0-rc.1] - 2026-11-16
+
+第一個 C# 版本（預覽版），取代 PowerShell 版 V1.0。功能已完成，發行前在實機驗證（見 docs/Manual-Test-Checklist.md）。
+
+### 新增
+
+- **視窗介面**（WPF，繁體中文）：總覽、即時趨勢（最近 5 分鐘）、磁碟、網路、溫度、程序、報告、狀態與錯誤、設定共 9 頁；開啟即監控，關閉視窗即停止。
+- **監控項目**：CPU、記憶體、磁碟容量、**磁碟 I/O**（邏輯與實體磁碟）、NVIDIA GPU（含溫度）、網路、程序 RAM 前 N 名、**ACPI 熱區**溫度。
+- **設定頁**：所有設定可在程式內修改，儲存前完整檢查，舊檔另存 `settings.json.bak`，儲存後自動重新啟動套用。
+- **歷史報告**：選擇期間產生單一離線 HTML（統計摘要、SVG 趨勢圖、尖峰時段、告警事件、高記憶體程序、資料品質）；視窗的「報告」頁或主控台 `report`。
+- **主控台程式**：`--once`（取樣一次，可輸出 JSON）、`run`（無介面連續監控）、`report`、`--self-check`。
+- **發行**：self-contained 單一檔案，不需安裝 .NET；zip 附使用說明與 SHA-256。
+
+### 與 V1.0 的差異
+
+- 改用 Windows API 與英文效能計數器，不需 WMI，不受系統語系影響；一般使用者權限即可。
+- CSV 改為 schema v1（檔名含版本，例如 `SystemMetrics_v1_20261116.csv`），新增磁碟 I/O 與溫度檔，分項檔加 `ErrorCode`；欄位見 docs/Data-Schema.md。
+- 資料預設存在 `%LOCALAPPDATA%\WindowsPerformanceMonitor`；設定檔改為 `settings.json`（欄位精簡，見 settings.example.json）。
+- 告警改在視窗顯示（規則沿用 V1.0：持續、冷卻、遲滯）。
+
+### 已知限制
+
+- 程式沒有數位簽章，第一次執行時 SmartScreen 會警告。
+- 只支援 NVIDIA GPU；ACPI 熱區不是 CPU 核心溫度，許多桌機沒有熱區。
+- 只發行 x64；Windows 11 ARM 以模擬執行，未實測。
+- 24 小時穩定性、繁體中文 Windows、Windows 10 22H2、NVIDIA 顯示卡、有熱區的筆電尚待實機驗證。
+
+<details>
+<summary>開發紀錄（各 Phase）</summary>
+
+### Phase 5c（2026-11-16）：使用說明與發行準備
+
+- 使用說明（docs/使用說明.md）、實機驗證清單（docs/Manual-Test-Checklist.md）、第三方授權聲明（THIRD-PARTY-NOTICES.md）。
+- 版本 2.0.0-rc.1；zip 改放使用說明與第三方授權聲明；README 定稿（保留一切權利）。
+- `actions/upload-artifact` 升級到 v6（Node.js 24）。
+
 ### Phase 5b（2026-11-16）：發行打包與 Release 流程
 
 - 版本號改為 2.0.0（`Directory.Build.props`）。
@@ -144,3 +180,5 @@
 - 新增 Cli `--self-check`、`--version`、`--help`。
 - 新增 CI：7 項檢查（Lint、Format、Type Check、Unit Test、Build Check、Git Diff Check、Smoke Test）。
 - 新增文件：規格書 v2.0 初稿、架構、舊版盤點、資料格式 v1 初稿、硬體相容性、測試規劃、技術決策 0001～0006。
+
+</details>

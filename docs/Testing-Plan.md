@@ -242,6 +242,16 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 |---|---|---|
 | `tools/package.ps1`：單一檔案發行（App 62.7 MB、Cli 36.7 MB）、只有 exe、zip 88.7 MB 與 SHA-256 | Linux 開發環境（交叉建置 win-x64） | Passed |
 | Release workflow 的版本檢查與 CHANGELOG 段落擷取（版本一致、不一致時失敗） | Linux 開發環境（PowerShell 7） | Passed |
-| Smoke Test 與 3 分鐘穩定性測試使用單一檔案發行檔（含第一次執行解壓縮原生元件） | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test 與 3 分鐘穩定性測試使用單一檔案發行檔（含第一次執行解壓縮原生元件） | Windows CI | Passed（Working Set 60～94 MB、Private Bytes 42～52 MB；zip artifact 約 93 MB） |
 | Release workflow 實際建立草稿 Release | GitHub（推 tag） | Not Tested（5c 完成 CHANGELOG 2.0.0 後由負責人推 tag） |
 | 單一檔案在 Windows 11／10 實機的第一次啟動時間、防毒軟體與 SmartScreen 行為 | Windows 實機 | Not Tested |
+
+### Phase 5c（2026-11-16）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置、Format、Type Check、單元測試 | Linux 開發環境，.NET SDK 10.0.404 | Passed（513 個） |
+| 打包內容：使用說明、CHANGELOG、第三方授權聲明、settings.example.json；版本 2.0.0-rc.1 | Linux 開發環境 | Passed |
+| CHANGELOG 2.0.0-rc.1 段落擷取（Release 說明） | Linux 開發環境（PowerShell 7） | Passed |
+| Release workflow 實際建立預覽版草稿（推 `v2.0.0-rc.1`） | GitHub | Not Tested（合併後由負責人推 tag） |
+| 實機驗證（[清單](Manual-Test-Checklist.md) A～F） | Windows 11 繁體中文、Windows 10 22H2 實機 | Not Tested |
