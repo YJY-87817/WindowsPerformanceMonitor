@@ -18,6 +18,7 @@
 | 主題 | V2.0 只做淺色；顏色集中定義在 `App.xaml`，日後加深色只需換一組資源。不使用實驗性的 Fluent `ThemeMode` |
 | 介面語言 | 繁體中文；狀態代碼保留英文並附中文（例如「正常（OK）」），與 CSV、Log 一致。畫面文字集中在 `Presentation/Text/UiText.cs` |
 | 畫面更新 | 組裝點以 `DispatcherTimer` 依 `monitor.refreshSeconds` 在 UI 執行緒呼叫 `MainViewModel.Refresh()`，讀取最新快照（與取樣週期分開）；監控由 `MonitoringController` 在背景執行 |
+| 設定頁（3c 開工前確認） | 全部欄位分區顯示；儲存時完整改寫 settings.json 並保留 .bak；儲存後停止監控並自動重新啟動程式套用（不在程式內熱套用） |
 | PR 拆法 | 3a：監控啟停、畫面更新、總覽、狀態／錯誤頁；3b：趨勢圖與磁碟、網路、溫度、程序頁；3c：設定頁 |
 
 ## 影響

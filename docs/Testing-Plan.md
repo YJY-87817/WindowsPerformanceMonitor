@@ -14,7 +14,7 @@
 | 4 | Unit Test | `dotnet test`（含覆蓋率） | 任何測試失敗 |
 | 5 | Build Check | `dotnet publish -r win-x64 --self-contained`（App、Cli） | 無法發行 |
 | 6 | Git Diff Check | `tools/diff-check.sh` | 空白錯誤、合併衝突標記、提交了 CSV／Log 或 Data／Logs 資料夾 |
-| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe -App publish/App/PerformanceMonitor.exe`（pwsh） | `--self-check` 失敗；（Windows）WPF 30 秒內沒有顯示主視窗、開啟後 Log 沒有「監控開始」、以 UI Automation 依序切換 7 個頁面時程式結束、關閉主視窗後 30 秒內沒有結束或 Log 沒有「監控正常停止」或 SystemMetrics CSV 沒有新資料列；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU、網路（預設篩選）或 ACPI 熱區為 Error（OK 或 Unavailable 才通過）、熱區溫度超出 −40～150°C、`includeNames = ["*"]` 時網路不是 OK 或沒有合計速度、NetworkMetrics CSV 缺該次 SampleId、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics／TemperatureMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU／GPU／網路／ACPI 熱區來源／單次取樣完成 |
+| 7 | Smoke Test | `tools/smoke-test.ps1 -Exe publish/Cli/PerformanceMonitor.Cli.exe -App publish/App/PerformanceMonitor.exe`（pwsh） | `--self-check` 失敗；（Windows）WPF 30 秒內沒有顯示主視窗、開啟後 Log 沒有「監控開始」、以 UI Automation 依序切換 8 個頁面時程式結束、設定頁按「儲存並重新啟動」後舊程式未結束／沒有新主視窗／沒有寫出 settings.json／新程式未自動監控、關閉主視窗後 30 秒內沒有結束或 Log 沒有「監控正常停止」或 SystemMetrics CSV 沒有新資料列；（Windows）`--once --json` 結束碼不是 0、CPU 或記憶體不是 OK 或使用率不在 0～100、記憶體容量不合理、磁碟容量不是 OK 或沒有固定磁碟、磁碟 I/O 不是 OK 或缺少 OK 的邏輯／實體磁碟、數值為負或忙碌率超出 0～100、GPU、網路（預設篩選）或 ACPI 熱區為 Error（OK 或 Unavailable 才通過）、熱區溫度超出 −40～150°C、`includeNames = ["*"]` 時網路不是 OK 或沒有合計速度、NetworkMetrics CSV 缺該次 SampleId、程序不是 OK 或筆數不在 1～5、DiskMetrics／DiskIoMetrics／GpuMetrics／ProcessMetrics／TemperatureMetrics CSV 缺本次 SampleId、CSV 有遺失、SystemMetrics CSV 缺 BOM／標題列／本次 SampleId、Application Log 缺啟動／CPU／GPU／網路／ACPI 熱區來源／單次取樣完成 |
 
 之後每加入一個資料來源，Smoke Test 就加上該模組的檢查。
 
@@ -183,5 +183,14 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 |---|---|---|
 | Release 建置（含 WPF XAML 編譯）、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
 | 單元測試：趨勢數值擷取（不是 OK 為 null、缺模組、只取邏輯磁碟、GPU 名稱重複）、只保留 5 分鐘、訂閱取樣、正規化座標、最新點在右緣、遇 null 斷開、停止期間斷開、小幅延遲不斷開、最新無法取得顯示「—」、沒有資料顯示原因、自動縱軸 1／2／5×10ⁿ、超出上限夾住、趨勢頁五張圖；磁碟、網路、溫度、程序頁的表格列與狀態列 | 同上 | Passed（404 個） |
-| Smoke Test：WPF 以 UI Automation 依序切換 7 個頁面 | Windows CI | 見 PR 的 CI 結果 |
+| Smoke Test：WPF 以 UI Automation 依序切換 7 個頁面 | Windows CI | Passed（關閉後結束碼 0、CSV 新增 3 列） |
 | 趨勢圖外觀與繪製效能、表格捲動、高 DPI | Windows 實機 | Not Tested |
+
+### Phase 3c（2026-11-16）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置（含 WPF XAML 編譯）、Format、Type Check | Linux 開發環境，.NET SDK 10.0.404 | Passed |
+| 單元測試：設定頁列出 settings.json 全部欄位與分區、載入目前值、儲存有效變更並重新啟動、轉換錯誤不儲存且保留輸入、驗證規則不儲存、目錄無法寫入不儲存、寫入失敗不重新啟動、復原與填入預設值、未修改時建出的設定與目前相同、設定檔有錯誤時的提示、取樣更新不覆蓋輸入；設定寫出與讀回一致（預設與自訂、中文不跳脫、null）；寫入檔案（建立目錄、無 BOM、不留暫存檔、無效舊檔另存 .bak、備份只保留上一份） | 同上 | Passed（421 個） |
+| Smoke Test：WPF 切換 8 個頁面；設定頁按「儲存並重新啟動」後寫出 settings.json、舊程式結束、新程式開啟並自動監控，結束後移除設定檔 | Windows CI | 見 PR 的 CI 結果 |
+| 實際修改各欄位後套用（週期、門檻、網路篩選、資料目錄）、鍵盤操作 | Windows 實機 | Not Tested |

@@ -4,6 +4,7 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using PerformanceMonitor.App.Services;
 using PerformanceMonitor.App.Views;
 using PerformanceMonitor.Application;
 using PerformanceMonitor.Application.Monitoring;
@@ -41,7 +42,9 @@ public partial class App : System.Windows.Application
             .AddPerformanceMonitorInfrastructure();
         builder.Services.AddSingleton(check.EffectiveSettings);
         builder.Services.AddSingleton(paths);
-        builder.Services.AddSingleton(new StartupStatus(check.Errors, check.Settings.Warnings));
+        builder.Services.AddSingleton(new StartupStatus(check.Errors, check.Settings.Warnings, check.Settings.IsValid));
+        builder.Services.AddSingleton<ISettingsService, SettingsFileService>();
+        builder.Services.AddSingleton<IApplicationRestart, ApplicationRestart>();
         builder.Services.AddSingleton<TrendHistory>();
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<MainWindow>();

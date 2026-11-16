@@ -1,6 +1,6 @@
 # 架構
 
-- 版本：Phase 3b（2026-11-13）
+- 版本：Phase 3c（2026-11-16）
 - 相關決策：[0007 WPF 介面](decisions/0007-wpf-ui.md)、[0002 分層架構](decisions/0002-layered-architecture.md)、[0003 依賴套件](decisions/0003-dependencies.md)、[0004 主控台進入點](decisions/0004-cli-entry-point.md)
 
 ## 1. 分層與依賴方向
@@ -81,6 +81,7 @@ builder.Services
 | `IAlertProvider`、`AlertView`、`AlertEvent`、`ActiveAlert` | Core | 告警狀態給 UI |
 | `AppSettings` | Core | 設定（各區塊為 record） |
 | `SettingsParser`／`SettingsValidator` | Application | 解析 JSON、檢查型別與範圍，一次列出所有錯誤 |
+| `SettingsSerializer` | Application | 寫出完整 settings.json（可由 `SettingsParser` 讀回相同設定） |
 | `IntervalSchedule` | Application | 單調時間格點：超時略過錯過的格點、不補跑 |
 | `SampleRunner` | Application | 依序執行模組一次，隔離失敗並組成快照 |
 | `MonitoringEngine` | Application | 主迴圈：暖機、取樣、發布、依格點寫入、停止時補寫 |
@@ -98,6 +99,7 @@ builder.Services
 | `SystemClock`、`HostInfo` | Infrastructure | `IClock`、`IHostInfo` 實作 |
 | `AppDataPaths` | Infrastructure | 根目錄、設定檔路徑、資料／Log 目錄解析 |
 | `SettingsFileLoader` | Infrastructure | 讀取 settings.json（不存在時用預設值） |
+| `SettingsFileWriter` | Infrastructure | 寫入 settings.json：舊檔另存 .bak、暫存檔寫入後取代 |
 | `MonitoringStartup`、`StartupCheck` | Infrastructure | 主控台與 WPF 共用：讀取設定、檢查資料目錄、寫啟動 Log |
 | `CsvFormat`、`CsvTables` | Infrastructure | CSV 欄位格式與 7 種 CSV 的 schema v1 |
 | `CsvFileWriter`、`CsvSnapshotRecorder` | Infrastructure | UTF-8 BOM 附加寫入、鎖定重試；`ISnapshotRecorder` 實作 |
@@ -121,6 +123,8 @@ builder.Services
 | `TrendChartBuilder`、`TrendChart` | Presentation | 計算正規化座標、斷開線段、自動縱軸（純函式）；WPF 只負責繪製 |
 | `TrendViewModel`、`DiskViewModel`、`NetworkViewModel`、`TemperatureViewModel`、`ProcessViewModel` | Presentation | 即時趨勢與各分頁（表格列已格式化） |
 | `TrendChartControl` | App | WPF 原生折線圖（`OnRender` 依正規化座標繪製） |
+| `SettingsViewModel`、`SettingField`、`ISettingsService`、`IApplicationRestart` | Presentation | 設定頁：全部欄位、轉換、驗證、儲存並重新啟動 |
+| `SettingsFileService`、`ApplicationRestart` | App | 設定頁的存檔（`SettingsFileWriter`、目錄檢查）與重新啟動（停止監控 → 啟動新程式 → 結束） |
 
 組裝點的啟動順序：`MonitoringStartup.Check`（讀取設定、檢查資料目錄）→ 將 `AppSettings` 與各 `IMonitor` 註冊到 DI →
 - Cli `--once`：有錯誤時顯示並以結束碼 1 結束；否則寫啟動 Log → `MonitoringSession.RunOnceAsync`。

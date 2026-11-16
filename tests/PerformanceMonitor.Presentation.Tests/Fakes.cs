@@ -2,6 +2,8 @@ using PerformanceMonitor.Application.Monitoring;
 using PerformanceMonitor.Core.Abstractions;
 using PerformanceMonitor.Core.Models;
 using PerformanceMonitor.Core.Models.Alerts;
+using PerformanceMonitor.Core.Settings;
+using PerformanceMonitor.Presentation.ViewModels;
 
 namespace PerformanceMonitor.Presentation.Tests;
 
@@ -52,6 +54,40 @@ internal sealed class FakeSession : IMonitoringSession
         catch (OperationCanceledException)
         {
         }
+    }
+}
+
+internal sealed class FakeSettingsService : ISettingsService
+{
+    public string SettingsPath => @"C:\Users\me\AppData\Local\WindowsPerformanceMonitor\settings.json";
+
+    public List<AppSettings> Saved { get; } = [];
+
+    public IReadOnlyList<string> DirectoryErrors { get; set; } = [];
+
+    public Exception? SaveThrows { get; set; }
+
+    public IReadOnlyList<string> CheckDirectories(AppSettings settings) => DirectoryErrors;
+
+    public void Save(AppSettings settings)
+    {
+        if (SaveThrows is not null)
+        {
+            throw SaveThrows;
+        }
+
+        Saved.Add(settings);
+    }
+}
+
+internal sealed class FakeRestart : IApplicationRestart
+{
+    public int Restarts { get; private set; }
+
+    public Task RestartAsync()
+    {
+        Restarts++;
+        return Task.CompletedTask;
     }
 }
 

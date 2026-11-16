@@ -15,6 +15,7 @@
      網路必須為 OK 且有合計速度；NetworkMetrics CSV 含該次 SampleId。結束後移除設定檔。
   4. （僅 Windows，指定 -App 時）WPF 程式：開啟後自動開始監控（Application Log 有「監控開始」），
      以 UI Automation 依序切換所有頁面（程式不得因畫面錯誤而結束），
+     在設定頁按「儲存並重新啟動」（寫出 settings.json、舊程式結束、新程式開啟並再次自動監控），
      關閉主視窗後在 30 秒內結束，且先停止監控（Log 有「監控正常停止」、SystemMetrics CSV 有補寫的資料列）。
 .PARAMETER Exe
   PerformanceMonitor.Cli 執行檔路徑。
@@ -263,13 +264,13 @@ if ($App) {
         # 依序切換所有頁面，讓每個頁面的 XAML 實際載入並繪製（含趨勢圖）。
         try {
             Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-            $root = [System.Windows.Automation.AutomationElement]::FromHandle($process.MainWindowHandle)
-            $nav = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+            $window = [System.Windows.Automation.AutomationElement]::FromHandle($process.MainWindowHandle)
+            $nav = $window.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
                 (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, '頁面')))
             $items = @($nav.FindAll([System.Windows.Automation.TreeScope]::Children,
                 (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem))))
-            if ($items.Count -lt 7) {
-                Write-Fail "WPF 導覽只有 $($items.Count) 個頁面（應有 7 個）"
+            if ($items.Count -lt 8) {
+                Write-Fail "WPF 導覽只有 $($items.Count) 個頁面（應有 8 個）"
             }
             foreach ($item in $items) {
                 $item.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
@@ -280,9 +281,46 @@ if ($App) {
                     break
                 }
             }
-            if (-not $process.HasExited -and $items.Count -ge 7) {
+            if (-not $process.HasExited -and $items.Count -ge 8) {
                 Write-Pass "WPF：依序切換 $($items.Count) 個頁面，程式正常"
             }
+
+            # 設定頁（最後一頁）：不修改內容，按「儲存並重新啟動」，確認寫出設定檔並重新啟動。
+            $settingsPath = Join-Path $root 'settings.json'
+            $existingIds = @(Get-Process -Name 'PerformanceMonitor' -ErrorAction SilentlyContinue | ForEach-Object Id)
+            $startedBeforeRestart = Get-LogCount '[Monitor] 監控開始'
+            $saveButton = $window.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+                (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, '儲存並重新啟動')))
+            if ($null -eq $saveButton) {
+                Write-Fail 'WPF 設定頁找不到「儲存並重新啟動」按鈕'
+            } else {
+                $saveButton.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+                if (-not $process.WaitForExit(30000)) {
+                    Write-Fail 'WPF 按「儲存並重新啟動」後 30 秒內舊程式沒有結束'
+                } else {
+                    $deadline = (Get-Date).AddSeconds(30)
+                    do {
+                        Start-Sleep -Milliseconds 500
+                        $restarted = Get-Process -Name 'PerformanceMonitor' -ErrorAction SilentlyContinue |
+                            Where-Object { $_.Id -notin $existingIds -and $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+                    } while ($null -eq $restarted -and (Get-Date) -lt $deadline)
+
+                    if ($null -eq $restarted) {
+                        Write-Fail 'WPF 重新啟動後 30 秒內沒有新的主視窗'
+                    } elseif (-not (Test-Path -LiteralPath $settingsPath)) {
+                        Write-Fail "WPF 儲存後沒有設定檔：$settingsPath"
+                    } else {
+                        Start-Sleep -Seconds 3
+                        if ((Get-LogCount '[Monitor] 監控開始') -le $startedBeforeRestart) {
+                            Write-Fail 'WPF 重新啟動後沒有再次自動開始監控'
+                        } else {
+                            Write-Pass 'WPF：設定頁儲存並重新啟動（寫出 settings.json、新程式自動監控）'
+                        }
+                        $process = $restarted
+                    }
+                }
+            }
+
         } catch {
             Write-Fail "WPF 頁面切換檢查失敗：$($_.Exception.Message)"
         }
@@ -290,6 +328,7 @@ if ($App) {
         if ($process.HasExited) {
             Write-Fail 'WPF 在關閉前已結束'
         }
+        $exitCode = '?'
         $null = $process.CloseMainWindow()
         if (-not $process.WaitForExit(30000)) {
             Write-Fail 'WPF 關閉主視窗後 30 秒內沒有結束'
@@ -299,9 +338,15 @@ if ($App) {
         } elseif (@([System.IO.File]::ReadAllLines($csvPath)).Count -le $rowsBefore) {
             Write-Fail 'WPF 監控期間與停止時沒有寫入 SystemMetrics CSV'
         } else {
-            Write-Pass "WPF：關閉主視窗後停止監控並結束（結束碼 $($process.ExitCode)、CSV 新增 $(@([System.IO.File]::ReadAllLines($csvPath)).Count - $rowsBefore) 列）"
+            try { $exitCode = $process.ExitCode } catch { } # 重新啟動後的程式不是本腳本啟動，可能讀不到結束碼
+            Write-Pass "WPF：關閉主視窗後停止監控並結束（結束碼 $exitCode、CSV 新增 $(@([System.IO.File]::ReadAllLines($csvPath)).Count - $rowsBefore) 列）"
         }
     }
+}
+
+if ($App) {
+    # 移除設定頁儲存的設定檔，不影響之後的執行。
+    Remove-Item -LiteralPath (Join-Path $root 'settings.json'), (Join-Path $root 'settings.json.bak') -ErrorAction SilentlyContinue
 }
 
 if ($script:Failed) { exit 1 }

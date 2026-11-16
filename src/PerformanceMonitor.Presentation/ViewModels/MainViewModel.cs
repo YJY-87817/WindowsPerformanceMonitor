@@ -31,7 +31,9 @@ public sealed class MainViewModel : ObservableObject
         IStorageStatus storage,
         StartupStatus startup,
         AppSettings settings,
-        TrendHistory trends)
+        TrendHistory trends,
+        ISettingsService settingsService,
+        IApplicationRestart restart)
     {
         ArgumentNullException.ThrowIfNull(storage);
         _controller = controller;
@@ -45,7 +47,8 @@ public sealed class MainViewModel : ObservableObject
         Network = new NetworkViewModel();
         Temperature = new TemperatureViewModel();
         Process = new ProcessViewModel();
-        Pages = [Overview, Trend, Disk, Network, Temperature, Process, Status];
+        Settings = new SettingsViewModel(settings, startup.SettingsFileValid, settingsService, restart);
+        Pages = [Overview, Trend, Disk, Network, Temperature, Process, Status, Settings];
         _selectedPage = Overview;
         StartCommand = new RelayCommand(Start, () => CanStart);
         StopCommand = new AsyncRelayCommand(StopAsync, () => CanStop);
@@ -60,6 +63,9 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>狀態與錯誤頁。</summary>
     public StatusViewModel Status { get; }
+
+    /// <summary>設定頁。</summary>
+    public SettingsViewModel Settings { get; }
 
     /// <summary>即時趨勢頁。</summary>
     public TrendViewModel Trend { get; }
