@@ -65,6 +65,13 @@ public class ReportDataReaderTests
             "id10,2026-11-16T01:00:10.000Z,Ethernet,Realtek,{2},True,100,200,,,Error,DataError",
             "id20,2026-11-16T01:00:20.000Z,,,,,,,,,Unavailable,Unavailable");
         Add(
+            ReportCsvFile.ProcessMetrics,
+            "id00,2026-11-16T01:00:00.000Z,1,chrome,100,500,2026-11-16T00:00:00.000Z,OK",
+            "id00,2026-11-16T01:00:00.000Z,2,chrome,101,300,2026-11-16T00:00:00.000Z,OK",
+            "id00,2026-11-16T01:00:00.000Z,3,Code,200,600,2026-11-16T00:00:00.000Z,OK",
+            "id10,2026-11-16T01:00:10.000Z,1,Code,200,900,2026-11-16T00:00:00.000Z,OK",
+            "id20,2026-11-16T01:00:20.000Z,,,,,,Unavailable");
+        Add(
             ReportCsvFile.TemperatureMetrics,
             "id00,2026-11-16T01:00:00.000Z,AcpiThermalZone,\\_TZ.THM0,45.5,OK,",
             "id00,2026-11-16T01:00:00.000Z,Gpu,GPU 0 RTX,60,OK,");
@@ -107,6 +114,28 @@ public class ReportDataReaderTests
         Assert.Equal(3, q.Modules.Single(m => m.Module == ReportGroups.Gpu).Statuses[MonitorStatus.Unavailable]);
         Assert.Equal(8, q.Modules.Count);
 
+        // 程序：同一次紀錄的同名程序相加；狀態列不算紀錄。
+        Assert.Equal(2, model.Processes.Records);
+        Assert.Equal(["Code", "chrome"], model.Processes.Top.Select(p => p.Name));
+        Assert.Equal(900, model.Processes.Top[0].MaxMB);
+        Assert.Equal(750, model.Processes.Top[0].AverageMB);
+        Assert.Equal(800, model.Processes.Top[1].MaxMB);
+        Assert.Equal(0.5, model.Processes.Top[1].AppearanceRatio);
+
+        // 告警：沒有恢復紀錄，算到該次監控結束（09:00:20）。
+        AlertSummary alert = Assert.Single(model.Alerts.Summaries);
+        Assert.Equal("CPU", alert.Target);
+        Assert.Equal(1, alert.Warnings);
+        Assert.Equal(TimeSpan.FromSeconds(15), alert.Duration);
+        Assert.True(alert.Unrecovered);
+        Assert.Equal("95%", alert.LastValueText);
+        Assert.Equal("90%", Assert.Single(model.Alerts.Recent).Threshold);
+
+        // 尖峰：CPU 兩筆在同一分鐘（同一段）。
+        PeakList cpuPeaks = Assert.Single(model.Peaks, p => p.Title == "CPU 使用率");
+        Assert.Equal(20, Assert.Single(cpuPeaks.Periods).Average);
+        Assert.Equal("C:", Assert.Single(model.Peaks, p => p.ByDevice && p.Title.StartsWith("磁碟", StringComparison.Ordinal)).Periods[0].Device);
+
         FileIssue bad = Assert.Single(q.FileIssues);
         Assert.Equal(FileIssueKind.BadRows, bad.Kind);
         Assert.Equal(2, bad.Count);
@@ -136,7 +165,7 @@ public class ReportDataReaderTests
         ReportModel model = Read(Day.AddDays(-2), Day);
 
         Assert.Equal([Day.AddDays(-2), Day.AddDays(-1)], model.Quality.DatesWithoutData);
-        Assert.Equal(6, model.Quality.FileIssues.Count(i => i.Kind == FileIssueKind.Missing)); // 5 個 CSV ＋ Application Log
+        Assert.Equal(7, model.Quality.FileIssues.Count(i => i.Kind == FileIssueKind.Missing)); // 6 個 CSV ＋ Application Log
         Assert.Contains(model.Quality.FileIssues, i => i.FileName == "Application_20261116.log" && i.Detail!.Contains("監控時段", StringComparison.Ordinal));
         Assert.False(model.Quality.LogsFound);
         Assert.Null(model.Quality.ExpectedSamples);
@@ -171,4 +200,26 @@ public class ReportDataReaderTests
         Assert.Equal(2, model.Quality.FileIssues.Single(i => i.FileName.StartsWith("DiskIo", StringComparison.Ordinal)).Count);
         Assert.Equal(1, model.Quality.FileIssues.Single(i => i.Kind == FileIssueKind.BadRows && i.FileName.StartsWith("Temperature", StringComparison.Ordinal)).Count);
     }
+
+    [Theory]
+    [InlineData("告警 Disk C:：目前 可用 5%（10 GB），門檻 可用 < 10%", AlertLogKind.Warning, "Disk C:", "可用 5%（10 GB）", "可用 < 10%")]
+    [InlineData("告警持續（冷卻結束後再次通知） RAM：目前 92%，門檻 90%", AlertLogKind.Repeat, "RAM", "92%", "90%")]
+    [InlineData("已恢復 CPU：目前 40%，門檻 85%", AlertLogKind.Recovered, "CPU", "40%", "85%")]
+    public void ParsesAlertMessages(string message, AlertLogKind kind, string target, string value, string threshold)
+    {
+        AlertLogEvent? e = ReportDataReader.ParseAlert(new LogLine(DateTimeOffset.UnixEpoch, "WARN", "Alert", message));
+
+        Assert.NotNull(e);
+        Assert.Equal(kind, e.Kind);
+        Assert.Equal(target, e.Target);
+        Assert.Equal(value, e.ValueText);
+        Assert.Equal(threshold, e.Threshold);
+    }
+
+    [Theory]
+    [InlineData("Alert", "其他訊息")]
+    [InlineData("Alert", "告警 CPU 沒有冒號")]
+    [InlineData("Monitor", "告警 CPU：目前 95%，門檻 90%")]
+    public void IgnoresOtherMessages(string source, string message) =>
+        Assert.Null(ReportDataReader.ParseAlert(new LogLine(DateTimeOffset.UnixEpoch, "INFO", source, message)));
 }

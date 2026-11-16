@@ -40,12 +40,16 @@ public sealed record ReportCsvFile(string Name, int Version, IReadOnlyList<strin
         1,
         ["SampleId", "TimestampUtc", "AdapterName", "InterfaceDescription", "InterfaceId", "IsPhysical", "ReceivedBytes", "SentBytes", "DownloadMbps", "UploadMbps", "Status", "ErrorCode"]);
 
+    /// <summary>ProcessMetrics（只在程序紀錄到期時寫入）。</summary>
+    public static readonly ReportCsvFile ProcessMetrics = new(
+        "ProcessMetrics", 1, ["SampleId", "TimestampUtc", "Rank", "ProcessName", "Pid", "WorkingSetMB", "StartTimeUtc", "Status"]);
+
     /// <summary>TemperatureMetrics。</summary>
     public static readonly ReportCsvFile TemperatureMetrics = new(
         "TemperatureMetrics", 1, ["SampleId", "TimestampUtc", "SensorType", "SensorName", "TemperatureC", "Status", "ErrorCode"]);
 
     /// <summary>報告讀取的所有 CSV。</summary>
-    public static IReadOnlyList<ReportCsvFile> All { get; } = [SystemMetrics, DiskMetrics, DiskIoMetrics, GpuMetrics, NetworkMetrics, TemperatureMetrics];
+    public static IReadOnlyList<ReportCsvFile> All { get; } = [SystemMetrics, DiskMetrics, DiskIoMetrics, GpuMetrics, NetworkMetrics, ProcessMetrics, TemperatureMetrics];
 
     /// <summary>指定日期的檔名。</summary>
     public string FileName(DateOnly localDate) =>

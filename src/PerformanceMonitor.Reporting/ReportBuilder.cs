@@ -21,6 +21,8 @@ public sealed class ReportBuilder
     private readonly List<(DateTimeOffset Time, SessionEventKind Kind)> _events = [];
     private readonly List<FileIssue> _fileIssues = [];
     private readonly List<DateOnly> _datesWithoutData = [];
+    private readonly List<AlertLogEvent> _alerts = [];
+    private readonly ProcessAccumulator _processes = new();
     private List<PendingSpan>? _spans;
     private DateTimeOffset? _earliest;
     private DateTimeOffset? _latest;
@@ -100,6 +102,16 @@ public sealed class ReportBuilder
         series.Add(time, value, status);
     }
 
+    /// <summary>加入一筆告警事件（Application Log）。</summary>
+    public void AddAlertEvent(AlertLogEvent alert)
+    {
+        ArgumentNullException.ThrowIfNull(alert);
+        _alerts.Add(alert);
+    }
+
+    /// <summary>加入一列程序紀錄（Top N 中狀態 OK、有名稱與 Working Set 的列）。</summary>
+    public void AddProcess(string sampleId, string name, double workingSetMB) => _processes.Add(sampleId, name, workingSetMB);
+
     /// <summary>加入檔案問題。</summary>
     public void AddFileIssue(FileIssue issue)
     {
@@ -131,7 +143,80 @@ public sealed class ReportBuilder
 
         var quality = new DataQuality(
             _earliest, _latest, _samples, _csvIntervalSeconds, _logsFound, sessions, modules, [.. _fileIssues], [.. _datesWithoutData]);
-        return new ReportModel(_period, Timeline, generatedAt, [.. _computers], series, quality);
+        return new ReportModel(
+            _period, Timeline, generatedAt, [.. _computers], series, quality, Peaks(series), Alerts(sessions), _processes.ToReport());
+    }
+
+    /// <summary>尖峰時段的指標（決策 0008）。</summary>
+    private static readonly (string Title, string Unit, SeriesRole Role, bool ByDevice)[] PeakRoles =
+    [
+        ("CPU 使用率", "%", SeriesRole.CpuUsage, false),
+        ("記憶體使用率", "%", SeriesRole.MemoryUsage, false),
+        ("磁碟忙碌率（各段最忙的邏輯磁碟）", "%", SeriesRole.LogicalDiskBusy, true),
+        ("網路合計下載", "Mbps", SeriesRole.NetworkDownload, false),
+        ("網路合計上傳", "Mbps", SeriesRole.NetworkUpload, false),
+        ("GPU 使用率（各段最高的 GPU）", "%", SeriesRole.GpuUsage, true),
+    ];
+
+    private PeakList[] Peaks(SeriesStatistics[] series) =>
+    [
+        .. PeakRoles
+            .Select(r => new PeakList(r.Title, r.Unit, PeakFinder.Find(PeakFinder.Combine(series.Where(s => s.Key.Role == r.Role), Timeline.BucketCount), Timeline), r.ByDevice))
+            .Where(p => p.Periods.Count > 0),
+    ];
+
+    private AlertReport Alerts(MonitoringSpan[] sessions)
+    {
+        AlertLogEvent[] events = [.. _alerts.OrderBy(a => a.Time)];
+        var summaries = new List<AlertSummary>();
+        foreach (IGrouping<string, AlertLogEvent> target in events.GroupBy(a => a.Target, StringComparer.Ordinal))
+        {
+            TimeSpan duration = TimeSpan.Zero;
+            bool unrecovered = false;
+            DateTimeOffset? since = null;
+            foreach (AlertLogEvent e in target)
+            {
+                if (e.Kind == AlertLogKind.Warning)
+                {
+                    if (since is DateTimeOffset previous)
+                    {
+                        duration += AlertEnd(previous, e.Time, sessions) - previous; // 沒有恢復紀錄又再次告警（程式重新啟動）
+                        unrecovered = true;
+                    }
+
+                    since = e.Time;
+                }
+                else if (e.Kind == AlertLogKind.Recovered && since is DateTimeOffset start)
+                {
+                    duration += e.Time - start;
+                    since = null;
+                }
+            }
+
+            if (since is DateTimeOffset open)
+            {
+                duration += AlertEnd(open, null, sessions) - open;
+                unrecovered = true;
+            }
+
+            summaries.Add(new AlertSummary(
+                target.Key,
+                target.Count(e => e.Kind == AlertLogKind.Warning),
+                target.Count(e => e.Kind == AlertLogKind.Repeat),
+                duration,
+                unrecovered,
+                target.LastOrDefault(e => e.Kind != AlertLogKind.Recovered)?.ValueText));
+        }
+
+        return new AlertReport(summaries, [.. events.Reverse().Take(AlertReport.MaxRecent)], events.Length);
+    }
+
+    /// <summary>沒有恢復紀錄的告警算到該次監控結束（監控停止時告警狀態也結束）；不晚於下一個事件。</summary>
+    private DateTimeOffset AlertEnd(DateTimeOffset start, DateTimeOffset? next, MonitoringSpan[] sessions)
+    {
+        MonitoringSpan? session = sessions.LastOrDefault(s => s.Start <= start);
+        DateTimeOffset end = session is not null && session.End >= start ? session.End : _latest is DateTimeOffset l && l >= start ? l : start;
+        return next is DateTimeOffset n && n < end ? n : end;
     }
 
     private MonitoringSpan ToSpan(PendingSpan span)
@@ -143,7 +228,8 @@ public sealed class ReportBuilder
             end = span.Start;
         }
 
-        int expected = kind == SessionEnd.Once ? 1 : (int)Math.Floor((end - span.Start).TotalSeconds / _csvIntervalSeconds) + 1;
+        // 開始時寫一筆、之後每個間隔一筆，停止時再補寫最後一筆：⌈時長 ÷ 間隔⌉ ＋ 1。
+        int expected = kind == SessionEnd.Once ? 1 : (int)Math.Ceiling(((end - span.Start).TotalSeconds / _csvIntervalSeconds) - 1e-9) + 1;
         return new MonitoringSpan(span.Start, end, kind, span.StartedBeforePeriod, expected);
     }
 
