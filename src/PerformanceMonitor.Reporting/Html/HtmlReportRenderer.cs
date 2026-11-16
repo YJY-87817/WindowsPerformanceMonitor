@@ -275,7 +275,7 @@ public static class HtmlReportRenderer
         Item(html, "最晚採樣", Local(model, q.Latest));
         Item(html, "實際紀錄筆數", q.ActualSamples.ToString("#,0", CultureInfo.InvariantCulture));
         Item(html, "預期紀錄筆數", q.ExpectedSamples is int e
-            ? $"{e.ToString("#,0", CultureInfo.InvariantCulture)}（各監控時段 ⌈時長 ÷ CSV 間隔 {q.CsvIntervalSeconds} 秒⌉ ＋ 1，依目前設定）"
+            ? $"{e.ToString("#,0", CultureInfo.InvariantCulture)}（各監控時段 ⌈時長 ÷ CSV 間隔 {q.CsvIntervalSeconds} 秒⌉ ＋ 1，依目前設定；每個時段可能有 ±1 筆誤差，視停止時是否補寫最後一筆）"
             : "無法計算（期間內沒有 Application Log）");
         Item(html, "缺失比例", Ratio(q.MissingRatio));
         Item(html, "趨勢彙總粒度", model.Timeline.GranularityText);
