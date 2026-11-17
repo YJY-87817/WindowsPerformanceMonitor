@@ -253,5 +253,5 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | Release 建置、Format、Type Check、單元測試 | Linux 開發環境，.NET SDK 10.0.404 | Passed（513 個） |
 | 打包內容：使用說明、CHANGELOG、第三方授權聲明、settings.example.json；版本 2.0.0-rc.1 | Linux 開發環境 | Passed |
 | CHANGELOG 2.0.0-rc.1 段落擷取（Release 說明） | Linux 開發環境（PowerShell 7） | Passed |
-| Release workflow 實際建立預覽版草稿（推 `v2.0.0-rc.1`） | GitHub | Not Tested（合併後由負責人推 tag） |
+| Release workflow 實際建立預覽版草稿（推 `v2.0.0-rc.1`） | GitHub | 第一次 Failed：版本檢查、建置、測試、打包、Smoke Test 都通過，建立草稿時 `--prerelease` 被拆成字元；修正後重推 tag 驗證 |
 | 實機驗證（[清單](Manual-Test-Checklist.md) A～F） | Windows 11 繁體中文、Windows 10 22H2 實機 | Not Tested |
