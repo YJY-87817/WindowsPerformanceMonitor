@@ -81,6 +81,7 @@ jobs:
               '```'
           ) -join "`n"
           Set-Content -LiteralPath release-body.md -Value $notes -Encoding utf8NoBOM
-          $prerelease = if ($env:TAG.Contains('-')) { @('--prerelease') } else { @() }
+          # 用 @(...) 確保是陣列：單一元素的 if 結果會變成字串，展開（splat）時會被拆成一個個字元。
+          $prerelease = @(if ($env:TAG.Contains('-')) { '--prerelease' })
           gh release create $env:TAG $zip artifacts/SHA256SUMS.txt --draft --verify-tag --title "Windows Performance Monitor $env:VERSION" --notes-file release-body.md @prerelease
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

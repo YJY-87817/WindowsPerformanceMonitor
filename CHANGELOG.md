@@ -39,6 +39,7 @@
 - 使用說明（docs/使用說明.md）、實機驗證清單（docs/Manual-Test-Checklist.md）、第三方授權聲明（THIRD-PARTY-NOTICES.md）。
 - 版本 2.0.0-rc.1；zip 改放使用說明與第三方授權聲明；README 定稿（保留一切權利）。
 - `actions/upload-artifact` 升級到 v6（Node.js 24）。
+- 修正 Release workflow：預覽版參數 `--prerelease` 被 PowerShell 拆成字元，導致 `v2.0.0-rc.1` 第一次建立草稿失敗（no matches found for `-`）。
 
 ### Phase 5b（2026-11-16）：發行打包與 Release 流程
 
