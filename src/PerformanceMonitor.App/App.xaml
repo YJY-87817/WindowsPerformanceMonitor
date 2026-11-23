@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:PerformanceMonitor.App.Converters"
+             xmlns:controls="clr-namespace:PerformanceMonitor.App.Controls"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
         <!-- 深色主題（2026-11-23 起；取代原淺色）：顏色集中定義，內建控制項的樣式在檔案末段。 -->
@@ -50,6 +51,32 @@
             <Setter Property="Padding" Value="12" />
             <Setter Property="Margin" Value="0,0,12,12" />
         </Style>
+        <!-- 趨勢圖卡片（即時趨勢頁與各裝置頁共用）：標題、圖、圖例（含最新數值） -->
+        <DataTemplate x:Key="TrendChartCard">
+            <Border Style="{StaticResource Card}" Width="440">
+                <StackPanel>
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" />
+                    <controls:TrendChartControl Chart="{Binding}" Height="170" Margin="0,6,0,4" AutomationProperties.Name="{Binding Title}" />
+                    <ItemsControl ItemsSource="{Binding Series}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                                    <Rectangle Width="12" Height="3" Fill="{Binding ColorIndex, Converter={StaticResource SeriesColor}}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Name}" Margin="4,0,4,0" />
+                                    <TextBlock Text="{Binding CurrentText}" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
         <!-- 唯讀表格：可用鍵盤移動、可調整欄寬 -->
         <Style TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False" />
