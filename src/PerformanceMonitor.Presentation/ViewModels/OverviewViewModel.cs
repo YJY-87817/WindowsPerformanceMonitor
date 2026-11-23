@@ -1,6 +1,9 @@
 using System.Globalization;
 using PerformanceMonitor.Core.Models;
+using PerformanceMonitor.Core.Models.Results;
+using PerformanceMonitor.Core.Settings;
 using PerformanceMonitor.Presentation.Text;
+using PerformanceMonitor.Presentation.Trends;
 
 namespace PerformanceMonitor.Presentation.ViewModels;
 
@@ -10,10 +13,14 @@ namespace PerformanceMonitor.Presentation.ViewModels;
 /// <param name="Kind">狀態分類（顏色）。</param>
 /// <param name="ValueText">目前數值摘要；無法取得時為「—」，不顯示假數值。</param>
 /// <param name="Message">錯誤或無法使用的原因；沒有時為 null。</param>
-public sealed record ModuleCard(string Title, string StatusText, StatusKind Kind, string ValueText, string? Message);
+public sealed record ModuleCard(string Title, string StatusText, StatusKind Kind, string ValueText, string? Message)
+{
+    /// <summary>最近 5 分鐘的迷你走勢；沒有趨勢資料（模組沒有趨勢或尚無數值）時為 null，畫面不顯示。</summary>
+    public TrendChart? Spark { get; init; }
+}
 
 /// <summary>總覽：各模組摘要與進行中的告警。</summary>
-public sealed class OverviewViewModel() : PageViewModel(UiText.OverviewPage)
+public sealed class OverviewViewModel(TrendHistory history, AppSettings settings) : PageViewModel(UiText.OverviewPage)
 {
     private IReadOnlyList<ModuleCard> _cards = [];
     private IReadOnlyList<string> _activeAlerts = [];
@@ -49,6 +56,30 @@ public sealed class OverviewViewModel() : PageViewModel(UiText.OverviewPage)
         private set => SetProperty(ref _sampleText, value);
     }
 
+    /// <summary>
+    /// 模組卡片的迷你走勢：CPU、記憶體、磁碟 I/O（忙碌率）、GPU（使用率）、網路（下載／上傳）、溫度；
+    /// 磁碟容量與程序沒有趨勢。尚無數值時回傳 null（不畫空圖）。
+    /// </summary>
+    public static TrendChart? Spark(string module, IReadOnlyList<TrendSample> samples, TimeSpan interval)
+    {
+        ArgumentNullException.ThrowIfNull(samples);
+        TrendChart? chart = module switch
+        {
+            ModuleNames.Cpu => Build("%", samples, TrendGroup.CpuMemory, interval, 100, 100, name => name == "CPU"),
+            ModuleNames.Memory => Build("%", samples, TrendGroup.CpuMemory, interval, 100, 100, name => name == "記憶體"),
+            ModuleNames.DiskIo => Build("%", samples, TrendGroup.DiskBusy, interval, 100, 100),
+            ModuleNames.Gpu => Build("%", samples, TrendGroup.GpuUsage, interval, 100, 100),
+            ModuleNames.Network => Build("Mbps", samples, TrendGroup.Network, interval, null, 1),
+            ModuleNames.Temperature => Build("°C", samples, TrendGroup.Temperature, interval, null, 100),
+            _ => null,
+        };
+        return chart is { HasData: true } ? chart : null;
+    }
+
+    private static TrendChart Build(
+        string unit, IReadOnlyList<TrendSample> samples, TrendGroup group, TimeSpan interval, double? fixedMax, double minimumMax, Func<string, bool>? filter = null) =>
+        TrendChartBuilder.Build(string.Empty, unit, samples, group, interval, fixedMax, minimumMax, string.Empty, null, filter);
+
     /// <inheritdoc />
     public override void Refresh(RefreshData data)
     {
@@ -56,8 +87,13 @@ public sealed class OverviewViewModel() : PageViewModel(UiText.OverviewPage)
         MonitorSnapshot? snapshot = data.Snapshot;
         if (snapshot is not null)
         {
+            IReadOnlyList<TrendSample> samples = history.Samples;
+            TimeSpan interval = TimeSpan.FromSeconds(settings.Monitor.SampleSeconds);
             Cards = [.. snapshot.Results.Select(r => new ModuleCard(
-                UiText.ModuleTitle(r.Module), UiText.Status(r.Status), UiText.Kind(r.Status), ModuleSummary.For(r), r.ErrorMessage))];
+                UiText.ModuleTitle(r.Module), UiText.Status(r.Status), UiText.Kind(r.Status), ModuleSummary.For(r), r.ErrorMessage)
+            {
+                Spark = Spark(r.Module, samples, interval),
+            })];
             SampleText = string.Create(
                 CultureInfo.InvariantCulture,
                 $"最後取樣：{snapshot.TimestampLocal:yyyy-MM-dd HH:mm:ss}，耗時 {snapshot.SampleDuration.TotalMilliseconds:0} ms{(snapshot.LoopOverrun ? "（超過取樣週期）" : string.Empty)}");

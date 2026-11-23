@@ -22,6 +22,21 @@ public enum TrendGroup
 
     /// <summary>各 GPU 溫度（°C）。</summary>
     GpuTemperature,
+
+    /// <summary>各邏輯磁碟讀取速度（MB/s）。</summary>
+    DiskRead,
+
+    /// <summary>各邏輯磁碟寫入速度（MB/s）。</summary>
+    DiskWrite,
+
+    /// <summary>各網路介面卡下載（Mbps）。</summary>
+    AdapterDownload,
+
+    /// <summary>各網路介面卡上傳（Mbps）。</summary>
+    AdapterUpload,
+
+    /// <summary>GPU 與 ACPI 熱區溫度（°C）。</summary>
+    Temperature,
 }
 
 /// <summary>一次取樣的趨勢數值；數值為 null 表示該次無法取得（畫線時斷開）。</summary>
@@ -115,15 +130,25 @@ public sealed class TrendHistory : IDisposable
         };
 
         var io = snapshot.Find<DiskIoResult>();
-        groups[TrendGroup.DiskBusy] = (io?.Disks ?? [])
-            .Where(d => d.Scope == DiskIoScope.Logical)
-            .Select(d => (d.Disk, d.Status == MonitorStatus.OK ? d.BusyPercent : null))
-            .ToSeries();
+        DiskIoItem[] logical = [.. (io?.Disks ?? []).Where(d => d.Scope == DiskIoScope.Logical)];
+        groups[TrendGroup.DiskBusy] = logical.Select(d => (d.Disk, d.Status == MonitorStatus.OK ? d.BusyPercent : null)).ToSeries();
+        groups[TrendGroup.DiskRead] = logical.Select(d => (d.Disk, d.Status == MonitorStatus.OK ? d.ReadMBps : null)).ToSeries();
+        groups[TrendGroup.DiskWrite] = logical.Select(d => (d.Disk, d.Status == MonitorStatus.OK ? d.WriteMBps : null)).ToSeries();
+
+        IReadOnlyList<NetworkAdapterItem> adapters = network?.Adapters ?? [];
+        groups[TrendGroup.AdapterDownload] = adapters.Select(a => (a.AdapterName, a.Status == MonitorStatus.OK ? a.DownloadMbps : null)).ToSeries();
+        groups[TrendGroup.AdapterUpload] = adapters.Select(a => (a.AdapterName, a.Status == MonitorStatus.OK ? a.UploadMbps : null)).ToSeries();
 
         var gpu = snapshot.Find<GpuResult>();
         IReadOnlyList<GpuItem> gpus = gpu?.Gpus ?? [];
         groups[TrendGroup.GpuUsage] = gpus.Select(g => (g.DeviceId, g.Status == MonitorStatus.OK ? g.UsagePercent : null)).ToSeries();
         groups[TrendGroup.GpuTemperature] = gpus.Select(g => (g.DeviceId, g.Status == MonitorStatus.OK ? g.TemperatureC : null)).ToSeries();
+
+        var zones = snapshot.Find<TemperatureResult>();
+        groups[TrendGroup.Temperature] = gpus
+            .Select(g => (g.DeviceId, g.Status == MonitorStatus.OK ? g.TemperatureC : null))
+            .Concat((zones?.Sensors ?? []).Select(z => (z.SensorName, z.Status == MonitorStatus.OK ? z.TemperatureC : null)))
+            .ToSeries();
 
         return new TrendSample(snapshot.TimestampUtc, groups);
     }

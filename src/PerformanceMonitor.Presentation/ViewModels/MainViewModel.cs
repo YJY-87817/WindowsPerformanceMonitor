@@ -41,12 +41,12 @@ public sealed class MainViewModel : ObservableObject
         _snapshots = snapshots;
         _alerts = alerts;
         _startup = startup;
-        Overview = new OverviewViewModel();
+        Overview = new OverviewViewModel(trends, settings);
         Status = new StatusViewModel(storage, startup);
         Trend = new TrendViewModel(trends, settings);
-        Disk = new DiskViewModel();
-        Network = new NetworkViewModel();
-        Temperature = new TemperatureViewModel();
+        Disk = new DiskViewModel(trends, settings);
+        Network = new NetworkViewModel(trends, settings);
+        Temperature = new TemperatureViewModel(trends, settings);
         Process = new ProcessViewModel();
         Settings = new SettingsViewModel(settings, startup.SettingsFileValid, settingsService, restart);
         Report = report;

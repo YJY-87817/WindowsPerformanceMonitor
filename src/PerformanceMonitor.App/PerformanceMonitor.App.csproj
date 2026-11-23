@@ -7,6 +7,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>PerformanceMonitor</AssemblyName>
     <RootNamespace>PerformanceMonitor.App</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

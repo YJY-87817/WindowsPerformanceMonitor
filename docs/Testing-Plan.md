@@ -255,3 +255,23 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 | CHANGELOG 2.0.0-rc.1 段落擷取（Release 說明） | Linux 開發環境（PowerShell 7） | Passed |
 | Release workflow 實際建立預覽版草稿（推 `v2.0.0-rc.1`） | GitHub | 第一次 Failed：版本檢查、建置、測試、打包、Smoke Test 都通過，建立草稿時 `--prerelease` 被拆成字元；修正後重推 tag 驗證 |
 | 實機驗證（[清單](Manual-Test-Checklist.md) A～F） | Windows 11 繁體中文、Windows 10 22H2 實機 | Not Tested |
+
+### Phase 6（2026-11-23）：深色主題與圖表（6.0、6a～6d）
+
+| 項目 | 環境 | 結果 |
+|---|---|---|
+| Release 建置（0 警告、0 錯誤）、Format、單元測試（Core 22、Reporting 51、Application 162、Infrastructure 202、Presentation 96） | Linux 開發環境，.NET SDK 10.0.100，`EnableWindowsTargeting` | Passed（533 個） |
+| 單元測試新增：停留命中與空檔、門檻線正規化與合併、seriesFilter、各裝置頁趨勢圖與無資料原因、總覽迷你走勢對應、磁碟橫條（門檻邊界、GB 條件、自訂門檻）、程序橫條比例 | 同上 | Passed |
+| 深色主題對比度：文字對背景皆 ≥ 4.5:1（WCAG 公式；調整後最低 5.1:1） | 計算 | Passed |
+| WPF 畫面（XAML 只確認可編譯，沒有實際顯示）：深色主題各頁與內建控制項、標題列、折線圖停留提示／時間刻度／門檻線、各裝置頁趨勢圖、總覽迷你走勢、磁碟與程序橫條 | Windows 11／10 實機，[清單](Manual-Test-Checklist.md) C7～C21 | **Not Tested（之後測試）** |
+| 程式碼審查（9 項）：2 項重要已修（提示框關閉時機、日期輸入欄深色）；其餘 7 項略過，待實機判斷 | — | 見下方「待處理」 |
+
+待處理（實機測試時確認，必要時另開修正）：
+
+1. 日期選擇：下拉月曆刻意維持淺底深字（內建範本顏色寫死）；確認可讀。
+2. 全域 Button 樣式的 `MinWidth="72"`（既有）可能讓日期選擇的下拉鈕過寬（C9）。
+3. 磁碟橫條只在 Breach 時變紅，恢復區間（Hysteresis）不紅；刻線只反映百分比門檻，不含 GB 條件（C19）。
+4. 兩條告警門檻接近（例如 90 與 85）時標籤可能重疊（C16）。
+5. 橫條最小寬度 6 px，極小比例會被放大（C19、C20）。
+6. 模組狀態為 Error／停用時總覽仍顯示過去 5 分鐘的走勢（C18）。
+7. 新增趨勢群組（磁碟讀寫、介面卡下載上傳、溫度）尚無直接的 Extract 單元測試。

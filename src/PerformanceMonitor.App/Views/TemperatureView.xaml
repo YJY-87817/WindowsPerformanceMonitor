@@ -6,6 +6,13 @@
         <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" />
         <TextBlock Text="{Binding ModuleStatus}" Foreground="{Binding ModuleKind, Converter={StaticResource StatusBrush}}" Style="{StaticResource ModuleStatus}" />
         <TextBlock Text="{Binding Note}" Style="{StaticResource Secondary}" Margin="0,0,0,8" />
+        <ItemsControl ItemsSource="{Binding Charts}" ItemTemplate="{StaticResource TrendChartCard}" Focusable="False" Margin="0,4,0,0">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
         <DataGrid ItemsSource="{Binding Sensors}" AutomationProperties.Name="溫度感測器">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="類型" Binding="{Binding Type}" Width="80" />
