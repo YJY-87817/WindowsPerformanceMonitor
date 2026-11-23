@@ -11,7 +11,20 @@
                 <DataGridTextColumn Header="排名" Binding="{Binding Rank}" Width="50" />
                 <DataGridTextColumn Header="名稱" Binding="{Binding Name}" Width="220" />
                 <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="80" />
-                <DataGridTextColumn Header="Working Set" Binding="{Binding WorkingSet}" Width="110" />
+                <DataGridTemplateColumn Header="Working Set（長條相對本次最大）" Width="260">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" MinWidth="80" />
+                                </Grid.ColumnDefinitions>
+                                <controls:BarGaugeControl Ratio="{Binding BarRatio}" Height="16" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding WorkingSet}" TextAlignment="Right" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="啟動時間" Binding="{Binding StartTime}" Width="*" />
             </DataGrid.Columns>
         </DataGrid>

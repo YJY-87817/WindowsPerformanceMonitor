@@ -20,7 +20,21 @@
                 <DataGridTextColumn Header="總量" Binding="{Binding Total}" Width="100" />
                 <DataGridTextColumn Header="已使用" Binding="{Binding Used}" Width="100" />
                 <DataGridTextColumn Header="可用" Binding="{Binding Free}" Width="100" />
-                <DataGridTextColumn Header="使用率" Binding="{Binding UsedPercent}" Width="70" />
+                <DataGridTemplateColumn Header="使用率（刻線為告警門檻）" Width="190">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" MinWidth="52" />
+                                </Grid.ColumnDefinitions>
+                                <controls:BarGaugeControl Ratio="{Binding UsedRatio}" MarkerRatio="{Binding MarkerRatio}" IsAlert="{Binding OverThreshold}"
+                                                          Height="16" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding UsedPercent}" TextAlignment="Right" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="狀態" Width="170"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding StatusText}" Foreground="{Binding Kind, Converter={StaticResource StatusBrush}}" Margin="4,2" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                 <DataGridTextColumn Header="原因" Binding="{Binding Message}" Width="*" />
             </DataGrid.Columns>

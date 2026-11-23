@@ -1,6 +1,8 @@
 using System.Globalization;
+using PerformanceMonitor.Application.Alerts;
 using PerformanceMonitor.Core.Enums;
 using PerformanceMonitor.Core.Models;
+using PerformanceMonitor.Core.Models.Alerts;
 using PerformanceMonitor.Core.Models.Results;
 using PerformanceMonitor.Core.Settings;
 using PerformanceMonitor.Presentation.Text;
@@ -10,7 +12,17 @@ using static PerformanceMonitor.Presentation.Text.ModuleSummary;
 namespace PerformanceMonitor.Presentation.ViewModels;
 
 /// <summary>磁碟容量一列（文字已格式化；無法取得為「—」）。</summary>
-public sealed record DiskCapacityRow(string Drive, string Label, string Total, string Used, string Free, string UsedPercent, string StatusText, StatusKind Kind, string? Message);
+public sealed record DiskCapacityRow(string Drive, string Label, string Total, string Used, string Free, string UsedPercent, string StatusText, StatusKind Kind, string? Message)
+{
+    /// <summary>已使用比例（0～1，橫條長度）；無法取得時為 null（不畫橫條）。</summary>
+    public double? UsedRatio { get; init; }
+
+    /// <summary>告警門檻刻線位置（0～1）：已使用比例達此值即可用空間低於門檻（只看可用百分比）。</summary>
+    public double MarkerRatio { get; init; }
+
+    /// <summary>目前是否已達告警條件（與告警判斷同一套規則，含 GB 條件）；橫條改為紅色。</summary>
+    public bool OverThreshold { get; init; }
+}
 
 /// <summary>磁碟 I/O 一列。</summary>
 public sealed record DiskIoRow(string Scope, string Disk, string Read, string Write, string Iops, string Latency, string Busy, string StatusText, StatusKind Kind, string? Message);
@@ -22,7 +34,11 @@ public sealed record NetworkRow(string Name, string Description, string Physical
 public sealed record TemperatureRow(string Type, string Name, string Temperature, string StatusText, StatusKind Kind, string? Message);
 
 /// <summary>程序一列。</summary>
-public sealed record ProcessRow(string Rank, string Name, string Pid, string WorkingSet, string StartTime);
+public sealed record ProcessRow(string Rank, string Name, string Pid, string WorkingSet, string StartTime)
+{
+    /// <summary>Working Set 相對於本次最大值的比例（0～1，橫條長度）。</summary>
+    public double BarRatio { get; init; }
+}
 
 /// <summary>有模組狀態列的分頁共用：模組狀態文字與原因。</summary>
 /// <param name="title">頁面名稱。</param>
@@ -112,7 +128,12 @@ public sealed class DiskViewModel(TrendHistory history, AppSettings settings) : 
         SetStatus(s.Find(ModuleNames.Disk), s.Find(ModuleNames.DiskIo));
         Capacity = [.. (disk?.Disks ?? []).Select(d => new DiskCapacityRow(
             d.Drive, d.VolumeLabel ?? string.Empty, Gb(d.TotalGB), Gb(d.UsedGB), Gb(d.FreeGB), Percent(d.UsedPercent),
-            UiText.Status(d.Status), UiText.Kind(d.Status), d.ErrorMessage))];
+            UiText.Status(d.Status), UiText.Kind(d.Status), d.ErrorMessage)
+        {
+            UsedRatio = d.Status == MonitorStatus.OK && d.UsedPercent is double used ? Math.Clamp(used / 100, 0, 1) : null,
+            MarkerRatio = Math.Clamp(1 - (settings.Thresholds.DiskFreePercent / 100), 0, 1),
+            OverThreshold = AlertConditionEvaluator.DiskCondition(d, settings.Thresholds) == AlertCondition.Breach,
+        })];
         Io = [.. (io?.Disks ?? []).Select(d => new DiskIoRow(
             d.Scope == DiskIoScope.Logical ? "邏輯" : "實體", d.Disk,
             $"{Number(d.ReadMBps, "0.00")} MB/s", $"{Number(d.WriteMBps, "0.00")} MB/s",
@@ -265,10 +286,15 @@ public sealed class ProcessViewModel() : ModulePageViewModel(UiText.ProcessPage)
 
         var process = s.Find<ProcessResult>();
         SetStatus(s.Find(ModuleNames.Process));
-        Processes = [.. (process?.Processes ?? []).Select(p => new ProcessRow(
+        IReadOnlyList<ProcessItem> items = process?.Processes ?? [];
+        double max = items.Count == 0 ? 0 : items.Max(p => p.WorkingSetMB);
+        Processes = [.. items.Select(p => new ProcessRow(
             p.Rank.ToString(CultureInfo.InvariantCulture), p.ProcessName, p.Pid.ToString(CultureInfo.InvariantCulture),
             $"{Number(p.WorkingSetMB, "0.0")} MB",
-            p.StartTimeUtc is DateTimeOffset t ? t.ToOffset(s.LocalOffset).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : UiText.NoValue))];
+            p.StartTimeUtc is DateTimeOffset t ? t.ToOffset(s.LocalOffset).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : UiText.NoValue)
+        {
+            BarRatio = max > 0 ? Math.Clamp(p.WorkingSetMB / max, 0, 1) : 0,
+        })];
         CountsText = process is null
             ? string.Empty
             : string.Create(CultureInfo.InvariantCulture, $"略過 {process.SkippedProcessCount} 個程序（已結束或無法讀取）；{process.MissingFieldCount} 個程序的啟動時間無權讀取");

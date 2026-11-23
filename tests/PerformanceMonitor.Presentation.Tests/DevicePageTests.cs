@@ -28,8 +28,8 @@ public class DevicePageTests
                 new DiskIoItem(MonitorStatus.WarmingUp, DiskIoScope.Physical, "0 C: D:", null, null, null, null, null, null, null),
             ])));
 
-        Assert.Equal(new DiskCapacityRow("C:", "System", "200.00 GB", "150.00 GB", "50.00 GB", "75.0%", "正常（OK）", StatusKind.Ok, null), page.Capacity[0]);
-        Assert.Equal(new DiskCapacityRow("D:", string.Empty, "—", "—", "—", "—", "錯誤（Error）", StatusKind.Error, "容量為 0"), page.Capacity[1]);
+        Assert.Equal(new DiskCapacityRow("C:", "System", "200.00 GB", "150.00 GB", "50.00 GB", "75.0%", "正常（OK）", StatusKind.Ok, null) { UsedRatio = 0.75, MarkerRatio = 0.9 }, page.Capacity[0]);
+        Assert.Equal(new DiskCapacityRow("D:", string.Empty, "—", "—", "—", "—", "錯誤（Error）", StatusKind.Error, "容量為 0") { MarkerRatio = 0.9 }, page.Capacity[1]);
         Assert.Equal(new DiskIoRow("邏輯", "C:", "1.23 MB/s", "0.50 MB/s", "120 / 80", "2.00 / 4.50 ms", "25.0%", "正常（OK）", StatusKind.Ok, null), page.Io[0]);
         Assert.Equal(new DiskIoRow("實體", "0 C: D:", "— MB/s", "— MB/s", "— / —", "— / — ms", "—", "暖機中（WarmingUp）", StatusKind.Pending, null), page.Io[1]);
         Assert.Equal("磁碟容量：錯誤（Error）；磁碟 I/O：正常（OK）", page.ModuleStatus);
@@ -103,7 +103,7 @@ public class DevicePageTests
             new ProcessItem(2, "System", 4, 0.1, null),
         ], 3, 1)));
 
-        Assert.Equal(new ProcessRow("1", "chrome", "1234", "1200.6 MB", "2026-11-13 14:00:00"), page.Processes[0]);
+        Assert.Equal(new ProcessRow("1", "chrome", "1234", "1200.6 MB", "2026-11-13 14:00:00") { BarRatio = 1 }, page.Processes[0]);
         Assert.Equal("—", page.Processes[1].StartTime);
         Assert.Equal("略過 3 個程序（已結束或無法讀取）；1 個程序的啟動時間無權讀取", page.CountsText);
         Assert.Equal("程序（RAM 前幾名）：正常（OK）", page.ModuleStatus);
@@ -157,4 +157,67 @@ public class DevicePageTests
     [Fact]
     public void ProcessPageHasNoTrendCharts() =>
         Assert.Empty(new ProcessViewModel().Charts);
+
+    [Theory]
+    [InlineData(95, 5, true)]   // 可用 5% ≤ 門檻 10%
+    [InlineData(90, 10, true)]  // 剛好等於門檻
+    [InlineData(80, 20, false)]
+    public void DiskBarMarksThresholdBreach(double usedPercent, double freePercent, bool breach)
+    {
+        var page = new DiskViewModel(new TrendHistory(), new AppSettings());
+
+        page.Refresh(Data(new DiskResult(MonitorStatus.OK, [new DiskItem(MonitorStatus.OK, "C:", null, 100, usedPercent, freePercent, usedPercent, freePercent)])));
+
+        DiskCapacityRow row = Assert.Single(page.Capacity);
+        Assert.Equal(usedPercent / 100, row.UsedRatio);
+        Assert.Equal(0.9, row.MarkerRatio, 9);
+        Assert.Equal(breach, row.OverThreshold);
+    }
+
+    [Fact]
+    public void DiskBarFollowsGbCondition()
+    {
+        // 可用 40%（百分比沒達門檻），但可用 4 GB ≤ GB 門檻 5 → any 模式視為達告警
+        var settings = new AppSettings { Thresholds = new ThresholdSettings { DiskFreeGB = 5, DiskRecoveryFreeGB = 6 } };
+        var page = new DiskViewModel(new TrendHistory(), settings);
+
+        page.Refresh(Data(new DiskResult(MonitorStatus.OK, [new DiskItem(MonitorStatus.OK, "C:", null, 10, 6, 4, 60, 40)])));
+
+        Assert.True(Assert.Single(page.Capacity).OverThreshold);
+    }
+
+    [Fact]
+    public void DiskBarCustomThresholdMovesMarker()
+    {
+        var settings = new AppSettings { Thresholds = new ThresholdSettings { DiskFreePercent = 20, DiskRecoveryFreePercent = 25 } };
+        var page = new DiskViewModel(new TrendHistory(), settings);
+
+        page.Refresh(Data(new DiskResult(MonitorStatus.OK, [new DiskItem(MonitorStatus.OK, "C:", null, 100, 50, 50, 50, 50)])));
+
+        Assert.Equal(0.8, Assert.Single(page.Capacity).MarkerRatio, 9);
+    }
+
+    [Fact]
+    public void ProcessBarsAreRelativeToLargest()
+    {
+        var page = new ProcessViewModel();
+
+        page.Refresh(Data(new ProcessResult(MonitorStatus.OK, [
+            new ProcessItem(1, "a", 1, 800, null),
+            new ProcessItem(2, "b", 2, 200, null),
+            new ProcessItem(3, "c", 3, 0, null),
+        ], 0, 0)));
+
+        Assert.Equal([1, 0.25, 0], page.Processes.Select(p => p.BarRatio));
+    }
+
+    [Fact]
+    public void ProcessBarsAreZeroWhenAllZero()
+    {
+        var page = new ProcessViewModel();
+
+        page.Refresh(Data(new ProcessResult(MonitorStatus.OK, [new ProcessItem(1, "a", 1, 0, null)], 0, 0)));
+
+        Assert.Equal(0, Assert.Single(page.Processes).BarRatio);
+    }
 }
