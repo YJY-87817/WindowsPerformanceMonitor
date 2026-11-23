@@ -44,9 +44,9 @@ public sealed class MainViewModel : ObservableObject
         Overview = new OverviewViewModel();
         Status = new StatusViewModel(storage, startup);
         Trend = new TrendViewModel(trends, settings);
-        Disk = new DiskViewModel();
-        Network = new NetworkViewModel();
-        Temperature = new TemperatureViewModel();
+        Disk = new DiskViewModel(trends, settings);
+        Network = new NetworkViewModel(trends, settings);
+        Temperature = new TemperatureViewModel(trends, settings);
         Process = new ProcessViewModel();
         Settings = new SettingsViewModel(settings, startup.SettingsFileValid, settingsService, restart);
         Report = report;

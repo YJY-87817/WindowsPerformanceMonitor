@@ -2,7 +2,9 @@ using System.Globalization;
 using PerformanceMonitor.Core.Enums;
 using PerformanceMonitor.Core.Models;
 using PerformanceMonitor.Core.Models.Results;
+using PerformanceMonitor.Core.Settings;
 using PerformanceMonitor.Presentation.Text;
+using PerformanceMonitor.Presentation.Trends;
 using static PerformanceMonitor.Presentation.Text.ModuleSummary;
 
 namespace PerformanceMonitor.Presentation.ViewModels;
@@ -28,6 +30,14 @@ public abstract class ModulePageViewModel(string title) : PageViewModel(title)
 {
     private string _moduleStatus = "尚未取樣";
     private StatusKind _moduleKind = StatusKind.Inactive;
+    private IReadOnlyList<TrendChart> _charts = [];
+
+    /// <summary>此頁的趨勢圖（最近 5 分鐘；沒有趨勢圖的頁為空）。</summary>
+    public IReadOnlyList<TrendChart> Charts
+    {
+        get => _charts;
+        protected set => SetProperty(ref _charts, value);
+    }
 
     /// <summary>模組狀態（多個模組時以「；」分隔）與原因。</summary>
     public string ModuleStatus
@@ -57,12 +67,19 @@ public abstract class ModulePageViewModel(string title) : PageViewModel(title)
         ModuleKind = present.Select(r => UiText.Kind(r.Status)).Max();
     }
 
+    /// <summary>取樣週期（趨勢圖判斷斷開用）。</summary>
+    protected static TimeSpan SampleInterval(AppSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        return TimeSpan.FromSeconds(settings.Monitor.SampleSeconds);
+    }
+
     /// <summary>以「讀 / 寫」格式組合兩個數值。</summary>
     protected static string Pair(double? first, double? second, string format) => $"{Number(first, format)} / {Number(second, format)}";
 }
 
 /// <summary>磁碟：容量與 I/O（邏輯與實體）。</summary>
-public sealed class DiskViewModel() : ModulePageViewModel(UiText.DiskPage)
+public sealed class DiskViewModel(TrendHistory history, AppSettings settings) : ModulePageViewModel(UiText.DiskPage)
 {
     private IReadOnlyList<DiskCapacityRow> _capacity = [];
     private IReadOnlyList<DiskIoRow> _io = [];
@@ -101,13 +118,23 @@ public sealed class DiskViewModel() : ModulePageViewModel(UiText.DiskPage)
             $"{Number(d.ReadMBps, "0.00")} MB/s", $"{Number(d.WriteMBps, "0.00")} MB/s",
             Pair(d.ReadIops, d.WriteIops, "0"), $"{Pair(d.ReadLatencyMs, d.WriteLatencyMs, "0.00")} ms", Percent(d.BusyPercent),
             UiText.Status(d.Status), UiText.Kind(d.Status), d.ErrorMessage))];
+
+        IReadOnlyList<TrendSample> samples = history.Samples;
+        TimeSpan interval = SampleInterval(settings);
+        const string NoData = "尚無資料（沒有邏輯磁碟 I/O 資料）";
+        Charts =
+        [
+            TrendChartBuilder.Build("各磁碟讀取速度", "MB/s", samples, TrendGroup.DiskRead, interval, null, 1, NoData),
+            TrendChartBuilder.Build("各磁碟寫入速度", "MB/s", samples, TrendGroup.DiskWrite, interval, null, 1, NoData),
+            TrendChartBuilder.Build("各磁碟忙碌率", "%", samples, TrendGroup.DiskBusy, interval, 100, 100, NoData),
+        ];
     }
 
     private static string Gb(double? value) => value is null ? UiText.NoValue : $"{Number(value, "0.00")} GB";
 }
 
 /// <summary>網路：納入統計的介面卡與合計。</summary>
-public sealed class NetworkViewModel() : ModulePageViewModel(UiText.NetworkPage)
+public sealed class NetworkViewModel(TrendHistory history, AppSettings settings) : ModulePageViewModel(UiText.NetworkPage)
 {
     private IReadOnlyList<NetworkRow> _adapters = [];
     private string _totalText = UiText.NoValue;
@@ -147,11 +174,20 @@ public sealed class NetworkViewModel() : ModulePageViewModel(UiText.NetworkPage)
             : string.Create(
                 CultureInfo.InvariantCulture,
                 $"下載 {Number(network.TotalDownloadMbps, "0.00")} Mbps／上傳 {Number(network.TotalUploadMbps, "0.00")} Mbps（{adapters.Count(a => a.Status == MonitorStatus.OK)} / {adapters.Count} 張介面卡）");
+
+        IReadOnlyList<TrendSample> samples = history.Samples;
+        TimeSpan interval = SampleInterval(settings);
+        const string NoData = "尚無資料（沒有納入統計的介面卡時無法使用）";
+        Charts =
+        [
+            TrendChartBuilder.Build("各介面卡下載", "Mbps", samples, TrendGroup.AdapterDownload, interval, null, 1, NoData),
+            TrendChartBuilder.Build("各介面卡上傳", "Mbps", samples, TrendGroup.AdapterUpload, interval, null, 1, NoData),
+        ];
     }
 }
 
 /// <summary>溫度：GPU 與 ACPI 熱區。</summary>
-public sealed class TemperatureViewModel() : ModulePageViewModel(UiText.TemperaturePage)
+public sealed class TemperatureViewModel(TrendHistory history, AppSettings settings) : ModulePageViewModel(UiText.TemperaturePage)
 {
     private IReadOnlyList<TemperatureRow> _sensors = [];
 
@@ -183,6 +219,11 @@ public sealed class TemperatureViewModel() : ModulePageViewModel(UiText.Temperat
                 "GPU", $"{g.DeviceId} {g.GpuName}", Celsius(g.Status, g.TemperatureC), UiText.Status(g.Status), UiText.Kind(g.Status), g.ErrorMessage)),
             .. (zones?.Sensors ?? []).Select(z => new TemperatureRow(
                 "ACPI 熱區", z.SensorName, Celsius(z.Status, z.TemperatureC), UiText.Status(z.Status), UiText.Kind(z.Status), z.ErrorMessage)),
+        ];
+        Charts =
+        [
+            TrendChartBuilder.Build(
+                "GPU 與 ACPI 熱區溫度", "°C", history.Samples, TrendGroup.Temperature, SampleInterval(settings), null, 100, "無法使用（沒有溫度資料）"),
         ];
     }
 

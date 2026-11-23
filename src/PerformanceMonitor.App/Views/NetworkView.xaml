@@ -5,6 +5,13 @@
     <StackPanel>
         <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" />
         <TextBlock Text="{Binding ModuleStatus}" Foreground="{Binding ModuleKind, Converter={StaticResource StatusBrush}}" Style="{StaticResource ModuleStatus}" />
+        <ItemsControl ItemsSource="{Binding Charts}" ItemTemplate="{StaticResource TrendChartCard}" Focusable="False" Margin="0,4,0,0">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
         <TextBlock Text="{Binding TotalText}" FontSize="15" Margin="0,0,0,8" />
         <TextBlock Text="只列出納入統計的介面卡（設定 network.includeNames／excludeNames／physicalOnlyByDefault）；排除的介面卡與原因記錄在啟動 Log。" Style="{StaticResource Secondary}" Margin="0,0,0,6" />
         <DataGrid ItemsSource="{Binding Adapters}" AutomationProperties.Name="網路介面卡">

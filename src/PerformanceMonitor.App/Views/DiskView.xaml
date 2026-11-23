@@ -5,6 +5,13 @@
     <StackPanel>
         <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" />
         <TextBlock Text="{Binding ModuleStatus}" Foreground="{Binding ModuleKind, Converter={StaticResource StatusBrush}}" Style="{StaticResource ModuleStatus}" />
+        <ItemsControl ItemsSource="{Binding Charts}" ItemTemplate="{StaticResource TrendChartCard}" Focusable="False" Margin="0,4,0,0">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
         <TextBlock Text="容量" Style="{StaticResource SectionTitle}" />
         <DataGrid ItemsSource="{Binding Capacity}" AutomationProperties.Name="磁碟容量">
             <DataGrid.Columns>
