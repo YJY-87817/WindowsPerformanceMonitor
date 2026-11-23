@@ -116,6 +116,7 @@ public static class TrendChartBuilder
     /// <param name="minimumMax">自動調整時縱軸最大值的下限。</param>
     /// <param name="emptyText">沒有任何資料時顯示的文字。</param>
     /// <param name="referenceLines">橫向參考線（數值與標籤，例如告警門檻）；高於縱軸最大值的不畫。</param>
+    /// <param name="seriesFilter">只畫名稱符合的線（例如總覽只取 CPU）；null 時全部。</param>
     public static TrendChart Build(
         string title,
         string unit,
@@ -125,11 +126,21 @@ public static class TrendChartBuilder
         double? fixedMax,
         double minimumMax,
         string emptyText,
-        IReadOnlyList<(double Value, string Label)>? referenceLines = null)
+        IReadOnlyList<(double Value, string Label)>? referenceLines = null,
+        Func<string, bool>? seriesFilter = null)
     {
         ArgumentNullException.ThrowIfNull(samples);
-        string[] names = [.. samples.SelectMany(s => s.Values.TryGetValue(group, out var v) ? v.Keys : []).Distinct(StringComparer.Ordinal)];
-        double[] values = [.. samples.SelectMany(s => s.Values.TryGetValue(group, out var v) ? v.Values : []).OfType<double>()];
+        string[] names =
+        [
+            .. samples.SelectMany(s => s.Values.TryGetValue(group, out var v) ? v.Keys : [])
+                .Distinct(StringComparer.Ordinal)
+                .Where(n => seriesFilter is null || seriesFilter(n)),
+        ];
+        double[] values =
+        [
+            .. samples.SelectMany(s => s.Values.TryGetValue(group, out var v) ? v.Where(p => seriesFilter is null || seriesFilter(p.Key)).Select(p => p.Value) : [])
+                .OfType<double>(),
+        ];
         if (samples.Count == 0 || names.Length == 0 || values.Length == 0)
         {
             return new TrendChart(title, fixedMax ?? minimumMax, Axis(fixedMax ?? minimumMax, unit), [], emptyText) { Unit = unit };

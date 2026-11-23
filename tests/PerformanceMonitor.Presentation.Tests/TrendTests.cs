@@ -2,6 +2,7 @@ using PerformanceMonitor.Core.Enums;
 using PerformanceMonitor.Core.Models;
 using PerformanceMonitor.Core.Models.Results;
 using PerformanceMonitor.Core.Settings;
+using PerformanceMonitor.Presentation.Text;
 using PerformanceMonitor.Presentation.Trends;
 using PerformanceMonitor.Presentation.ViewModels;
 
@@ -285,6 +286,59 @@ public class TrendTests
     public void EmptyChartHasNoHover()
     {
         Assert.Null(CpuChart().HoverText(0.5));
+    }
+
+    [Fact]
+    public void SeriesFilterKeepsOnlyMatchingLines()
+    {
+        var sample = new TrendSample(Samples.Time, new Dictionary<TrendGroup, IReadOnlyDictionary<string, double?>>
+        {
+            [TrendGroup.CpuMemory] = new Dictionary<string, double?> { ["CPU"] = 10, ["記憶體"] = 60 },
+        });
+
+        TrendChart chart = TrendChartBuilder.Build(
+            "x", "Mbps", [sample], TrendGroup.CpuMemory, Interval, null, 1, "無", null, name => name == "CPU");
+
+        ChartSeries series = Assert.Single(chart.Series);
+        Assert.Equal("CPU", series.Name);
+        Assert.Equal(20, chart.YMax); // 只看 CPU：10 × 1.1 → 20，不受記憶體 60 影響
+    }
+
+    [Fact]
+    public void OverviewSparkMapsModulesToTrendGroups()
+    {
+        var history = new TrendHistory();
+        history.Add(At(
+            0,
+            new CpuResult(MonitorStatus.OK, 25),
+            new MemoryResult(MonitorStatus.OK, 8, 16, 8, 50),
+            new NetworkResult(MonitorStatus.OK, [new NetworkAdapterItem(MonitorStatus.OK, "E", null, null, true, 1, 1, 10, 2)], 10, 2)));
+        IReadOnlyList<TrendSample> samples = history.Samples;
+
+        TrendChart cpu = Assert.IsType<TrendChart>(OverviewViewModel.Spark(ModuleNames.Cpu, samples, Interval));
+        TrendChart memory = Assert.IsType<TrendChart>(OverviewViewModel.Spark(ModuleNames.Memory, samples, Interval));
+        TrendChart network = Assert.IsType<TrendChart>(OverviewViewModel.Spark(ModuleNames.Network, samples, Interval));
+
+        Assert.Equal("CPU", Assert.Single(cpu.Series).Name);
+        Assert.Equal("記憶體", Assert.Single(memory.Series).Name);
+        Assert.Equal(["上傳", "下載"], network.Series.Select(x => x.Name));
+        Assert.Null(OverviewViewModel.Spark(ModuleNames.Disk, samples, Interval));
+        Assert.Null(OverviewViewModel.Spark(ModuleNames.Process, samples, Interval));
+        Assert.Null(OverviewViewModel.Spark(ModuleNames.Gpu, samples, Interval)); // 沒有 GPU 資料
+        Assert.Null(OverviewViewModel.Spark(ModuleNames.Cpu, [], Interval));
+    }
+
+    [Fact]
+    public void OverviewCardsCarrySpark()
+    {
+        var history = new TrendHistory();
+        history.Add(At(0, new CpuResult(MonitorStatus.OK, 25), new DiskResult(MonitorStatus.OK, [])));
+        var page = new OverviewViewModel(history, new AppSettings());
+
+        page.Refresh(new RefreshData(At(0, new CpuResult(MonitorStatus.OK, 25), new DiskResult(MonitorStatus.OK, [])), new Core.Models.Alerts.AlertView(true, [], [])));
+
+        Assert.NotNull(page.Cards.Single(c => c.Title == UiText.ModuleTitle(ModuleNames.Cpu)).Spark);
+        Assert.Null(page.Cards.Single(c => c.Title == UiText.ModuleTitle(ModuleNames.Disk)).Spark);
     }
 
     [Fact]

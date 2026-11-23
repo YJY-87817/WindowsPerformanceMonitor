@@ -41,7 +41,7 @@ public sealed class MainViewModel : ObservableObject
         _snapshots = snapshots;
         _alerts = alerts;
         _startup = startup;
-        Overview = new OverviewViewModel();
+        Overview = new OverviewViewModel(trends, settings);
         Status = new StatusViewModel(storage, startup);
         Trend = new TrendViewModel(trends, settings);
         Disk = new DiskViewModel(trends, settings);

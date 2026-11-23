@@ -1,6 +1,7 @@
 <UserControl x:Class="PerformanceMonitor.App.Views.OverviewView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:PerformanceMonitor.App.Controls">
     <StackPanel>
         <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" />
         <TextBlock Text="{Binding SampleText}" Style="{StaticResource Secondary}" Margin="0,0,0,12" />
@@ -37,6 +38,9 @@
                             </DockPanel>
                             <TextBlock Text="{Binding ValueText}" FontSize="16" Margin="0,6,0,0" TextWrapping="Wrap" />
                             <TextBlock Text="{Binding Message}" Style="{StaticResource Secondary}" Margin="0,4,0,0" />
+                            <controls:TrendChartControl Chart="{Binding Spark}" Compact="True" Height="36" Margin="0,8,0,0"
+                                                        Visibility="{Binding Spark, Converter={StaticResource NullToVisibility}}"
+                                                        AutomationProperties.Name="最近 5 分鐘走勢" />
                         </StackPanel>
                     </Border>
                 </DataTemplate>

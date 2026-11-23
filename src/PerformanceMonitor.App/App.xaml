@@ -25,6 +25,7 @@
         <conv:StatusKindToBrushConverter x:Key="StatusBrush" />
         <conv:SeriesColorConverter x:Key="SeriesColor" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <conv:NullToVisibilityConverter x:Key="NullToVisibility" />
 
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
