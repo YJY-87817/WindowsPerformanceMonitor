@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Interop;
+using PerformanceMonitor.App.Services;
 using PerformanceMonitor.Application.Monitoring;
 using PerformanceMonitor.Presentation.ViewModels;
 
@@ -22,6 +24,7 @@ public partial class MainWindow : Window
         _viewModel = viewModel;
         _controller = controller;
         DataContext = viewModel;
+        SourceInitialized += (_, _) => DarkTitleBar.Apply(new WindowInteropHelper(this).Handle);
     }
 
     /// <inheritdoc />

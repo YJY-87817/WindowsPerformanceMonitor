@@ -11,14 +11,14 @@
         <SolidColorBrush x:Key="BorderBrush" Color="#3A3F47" />
         <SolidColorBrush x:Key="TextBrush" Color="#E6E8EB" />
         <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A0A7B2" />
-        <SolidColorBrush x:Key="OkBrush" Color="#3FB950" />
-        <SolidColorBrush x:Key="PendingBrush" Color="#D29922" />
-        <SolidColorBrush x:Key="InactiveBrush" Color="#8B949E" />
-        <SolidColorBrush x:Key="ErrorBrush" Color="#F85149" />
-        <SolidColorBrush x:Key="BannerBrush" Color="#3D1F1F" />
+        <SolidColorBrush x:Key="OkBrush" Color="#4BC25F" />
+        <SolidColorBrush x:Key="PendingBrush" Color="#E0A82E" />
+        <SolidColorBrush x:Key="InactiveBrush" Color="#A0A7B2" />
+        <SolidColorBrush x:Key="ErrorBrush" Color="#FF7B72" />
+        <SolidColorBrush x:Key="BannerBrush" Color="#35191A" />
         <SolidColorBrush x:Key="HoverBrush" Color="#2D3138" />
-        <SolidColorBrush x:Key="SelectionBrush" Color="#1F3A5F" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#58A6FF" />
+        <SolidColorBrush x:Key="SelectionBrush" Color="#1B3252" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#6CB2FF" />
         <SolidColorBrush x:Key="InputBrush" Color="#1F2125" />
 
         <conv:StatusKindToBrushConverter x:Key="StatusBrush" />

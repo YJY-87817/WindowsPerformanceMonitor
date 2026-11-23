@@ -104,12 +104,12 @@ public sealed class TrendChartControl : FrameworkElement
     }
 }
 
-/// <summary>線的顏色（淺色主題、色盲較易分辨的組合）。</summary>
+/// <summary>線的顏色（深色背景上容易辨識、色盲較易分辨的組合）。</summary>
 public static class SeriesBrush
 {
     private static readonly Brush[] Palette =
     [
-        Frozen("#1F6FEB"), Frozen("#D1495B"), Frozen("#2E933C"), Frozen("#E89005"), Frozen("#7A4EAB"), Frozen("#00A6A6"),
+        Frozen("#58A6FF"), Frozen("#FF7B8A"), Frozen("#56D364"), Frozen("#F0B341"), Frozen("#BC8CFF"), Frozen("#39C5CF"),
     ];
 
     /// <summary>依編號取色（循環使用）。</summary>
