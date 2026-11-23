@@ -356,10 +356,28 @@
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         </Style>
 
-        <!-- 日期選擇：月曆本體套深色（日期按鈕等細部以實機確認） -->
-        <Style TargetType="Calendar">
-            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        <!--
+          日期選擇：輸入欄為深色；下拉月曆的日期按鈕使用內建淺色範本（顏色寫死在範本內），
+          所以月曆維持「淺底深字」，確保一定讀得到，而不是淺字疊在淺底上。
+        -->
+        <Style TargetType="DatePickerTextBox">
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="{StaticResource InputBrush}" />
+            <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DatePickerTextBox">
+                        <Border Background="{TemplateBinding Background}" BorderThickness="0">
+                            <ScrollViewer x:Name="PART_ContentHost" Padding="{TemplateBinding Padding}" Focusable="False" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Calendar">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="#1F2329" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         </Style>
         <Style TargetType="DatePicker">

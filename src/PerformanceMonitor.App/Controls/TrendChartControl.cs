@@ -28,9 +28,40 @@ public sealed class TrendChartControl : FrameworkElement
     private const double BottomMargin = 18;
     private const double CompactMargin = 2;
 
-    private readonly ToolTip _tip = new() { Placement = PlacementMode.Relative, StaysOpen = true };
+    private readonly ToolTip _tip = new() { Placement = PlacementMode.Relative, StaysOpen = false };
     private double? _hoverX;
     private Point _mouse;
+    private Window? _window;
+
+    /// <summary>建立圖；提示框是手動開啟的，所以在卸載（換頁）與視窗失去焦點時必須自行關閉。</summary>
+    public TrendChartControl()
+    {
+        Loaded += (_, _) =>
+        {
+            _window = Window.GetWindow(this);
+            if (_window is not null)
+            {
+                _window.Deactivated += OnWindowDeactivated;
+            }
+        };
+        Unloaded += (_, _) =>
+        {
+            if (_window is not null)
+            {
+                _window.Deactivated -= OnWindowDeactivated;
+                _window = null;
+            }
+
+            CloseHover();
+        };
+        IsVisibleChanged += (_, e) =>
+        {
+            if (e.NewValue is false)
+            {
+                CloseHover();
+            }
+        };
+    }
 
     /// <summary>要繪製的圖。</summary>
     public TrendChart? Chart
@@ -146,6 +177,15 @@ public sealed class TrendChartControl : FrameworkElement
         }
 
         drawingContext.Pop();
+    }
+
+    private void OnWindowDeactivated(object? sender, EventArgs e) => CloseHover();
+
+    private void CloseHover()
+    {
+        _hoverX = null;
+        _tip.IsOpen = false;
+        InvalidateVisual();
     }
 
     private static void OnChartChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
