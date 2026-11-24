@@ -260,7 +260,7 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 
 | 項目 | 環境 | 結果 |
 |---|---|---|
-| Release 建置（0 警告、0 錯誤）、Format、單元測試（Core 22、Reporting 51、Application 162、Infrastructure 202、Presentation 96） | Linux 開發環境，.NET SDK 10.0.100，`EnableWindowsTargeting` | Passed（533 個） |
+| Release 建置（0 警告、0 錯誤）、Format、單元測試（Core 22、Reporting 51、Application 162、Infrastructure 202、Presentation 100） | Linux 開發環境，.NET SDK 10.0.100，`EnableWindowsTargeting` | Passed（537 個） |
 | 單元測試新增：停留命中與空檔、門檻線正規化與合併、seriesFilter、各裝置頁趨勢圖與無資料原因、總覽迷你走勢對應、磁碟橫條（門檻邊界、GB 條件、自訂門檻）、程序橫條比例 | 同上 | Passed |
 | 深色主題對比度：文字對背景皆 ≥ 4.5:1（WCAG 公式；調整後最低 5.1:1） | 計算 | Passed |
 | WPF 畫面（XAML 只確認可編譯，沒有實際顯示）：深色主題各頁與內建控制項、標題列、折線圖停留提示／時間刻度／門檻線、各裝置頁趨勢圖、總覽迷你走勢、磁碟與程序橫條 | Windows 11／10 實機，[清單](Manual-Test-Checklist.md) C7～C21 | **Not Tested（之後測試）** |
@@ -274,4 +274,4 @@ CI 沒有 GPU 時，GPU 測試標示 Skipped，不得宣稱已完成實機驗證
 4. 兩條告警門檻接近（例如 90 與 85）時標籤可能重疊（C16）。
 5. 橫條最小寬度 6 px，極小比例會被放大（C19、C20）。
 6. 模組狀態為 Error／停用時總覽仍顯示過去 5 分鐘的走勢（C18）。
-7. 新增趨勢群組（磁碟讀寫、介面卡下載上傳、溫度）尚無直接的 Extract 單元測試。
+7. ~~新增趨勢群組缺直接的 Extract 單元測試~~：已補（磁碟讀寫只取邏輯磁碟且非 OK 為 null、介面卡下載上傳、GPU 與 ACPI 熱區溫度、模組缺少時為空）。

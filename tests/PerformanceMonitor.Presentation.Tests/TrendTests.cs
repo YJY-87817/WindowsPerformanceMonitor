@@ -54,6 +54,74 @@ public class TrendTests
     }
 
     [Fact]
+    public void ExtractsDiskSpeedsForLogicalDisksOnly()
+    {
+        TrendSample s = TrendHistory.Extract(At(
+            0,
+            new DiskIoResult(MonitorStatus.OK, [
+                new DiskIoItem(MonitorStatus.OK, DiskIoScope.Logical, "C:", 1.5, 0.5, 0, 0, 0, 0, 10),
+                new DiskIoItem(MonitorStatus.WarmingUp, DiskIoScope.Logical, "D:", null, null, null, null, null, null, null),
+                new DiskIoItem(MonitorStatus.Error, DiskIoScope.Logical, "E:", 9, 9, 0, 0, 0, 0, 9),
+                new DiskIoItem(MonitorStatus.OK, DiskIoScope.Physical, "0 C:", 7, 7, 0, 0, 0, 0, 7),
+            ])));
+
+        Assert.Equal(["C:", "D:", "E:"], s.Values[TrendGroup.DiskRead].Keys);
+        Assert.Equal(1.5, s.Values[TrendGroup.DiskRead]["C:"]);
+        Assert.Equal(0.5, s.Values[TrendGroup.DiskWrite]["C:"]);
+        Assert.Null(s.Values[TrendGroup.DiskRead]["D:"]); // 暖機中沒有數值
+        Assert.Null(s.Values[TrendGroup.DiskWrite]["E:"]); // 非 OK 即使有數值也不畫
+    }
+
+    [Fact]
+    public void ExtractsPerAdapterSpeeds()
+    {
+        TrendSample s = TrendHistory.Extract(At(
+            0,
+            new NetworkResult(MonitorStatus.OK, [
+                new NetworkAdapterItem(MonitorStatus.OK, "Ethernet", null, null, true, 1, 1, 10, 2),
+                new NetworkAdapterItem(MonitorStatus.Error, "Wi-Fi", null, null, true, 1, 1, 99, 99),
+            ], 10, 2)));
+
+        Assert.Equal(10, s.Values[TrendGroup.AdapterDownload]["Ethernet"]);
+        Assert.Equal(2, s.Values[TrendGroup.AdapterUpload]["Ethernet"]);
+        Assert.Null(s.Values[TrendGroup.AdapterDownload]["Wi-Fi"]);
+        Assert.Null(s.Values[TrendGroup.AdapterUpload]["Wi-Fi"]);
+    }
+
+    [Fact]
+    public void ExtractsGpuAndThermalZoneTemperatures()
+    {
+        TrendSample s = TrendHistory.Extract(At(
+            0,
+            new GpuResult(MonitorStatus.OK, [
+                new GpuItem(MonitorStatus.OK, 0, "RTX", 35, 1, 2, 61),
+                new GpuItem(MonitorStatus.Error, 1, "GTX", null, null, null, 70),
+            ]),
+            new TemperatureResult(MonitorStatus.OK, [
+                new ThermalZoneItem(MonitorStatus.OK, "TZ00", 48.5),
+                new ThermalZoneItem(MonitorStatus.Error, "TZ01", 99),
+            ])));
+
+        IReadOnlyDictionary<string, double?> temps = s.Values[TrendGroup.Temperature];
+        Assert.Equal(["GPU 0", "GPU 1", "TZ00", "TZ01"], temps.Keys);
+        Assert.Equal(61, temps["GPU 0"]);
+        Assert.Null(temps["GPU 1"]);
+        Assert.Equal(48.5, temps["TZ00"]);
+        Assert.Null(temps["TZ01"]);
+    }
+
+    [Fact]
+    public void MissingModulesGiveEmptyDeviceGroups()
+    {
+        TrendSample s = TrendHistory.Extract(At(0));
+
+        foreach (TrendGroup group in new[] { TrendGroup.DiskRead, TrendGroup.DiskWrite, TrendGroup.AdapterDownload, TrendGroup.AdapterUpload, TrendGroup.Temperature })
+        {
+            Assert.Empty(s.Values[group]);
+        }
+    }
+
+    [Fact]
     public void MissingModulesGiveNullOrEmpty()
     {
         TrendSample s = TrendHistory.Extract(At(0));
